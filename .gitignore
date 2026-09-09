@@ -12,3 +12,6 @@ data/_nodes_cache/
 data/*.csv
 data/*.parquet
 !data/food_groups.csv
+
+__pycache__/
+*.pyc
