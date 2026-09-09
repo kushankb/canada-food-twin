@@ -1,0 +1,105 @@
+# Canada Food Twin
+
+**Where Canada's food comes from, where it goes, and the infrastructure that moves it.**
+
+→ https://canadafoodsupply.kushankbajaj.com
+
+An interactive map and analysis of Canada's food trade at the level of individual transport
+segments: 70,198 road, rail, maritime and port edges carrying 82 commodities between Canada
+and 175 partner countries, cut by direction, food group and province.
+
+Companion to [globalfoodsupply.kushankbajaj.com](https://globalfoodsupply.kushankbajaj.com),
+which covers the whole world but cannot distinguish imports from exports. This one can — see
+[Why directional](#why-directional).
+
+## The headline
+
+|  | Imports | Exports |
+|---|---|---|
+| Tonnage | 21.7 Mt | 65.5 Mt |
+| Calories | 38.7 trillion kcal | 209.4 trillion kcal |
+| Partner countries | 145 | 175 |
+| HHI | 0.560 | 0.079 |
+| **Effective partners** | **1.79** | **12.69** |
+
+Canada sells food to the world and buys it from its neighbour. The United States supplies
+74.6% of imported tonnage, 87% of imported oilseed calories and 84% of imported grain
+calories. Despite 145 countries appearing in the import data, the concentration is that of
+fewer than two equally-sized suppliers.
+
+The mirror image on the export side is narrow but real: **Starchy Roots** — potatoes — runs at
+HHI 0.865 with 93% going to the United States.
+
+## Why directional
+
+The global app ships *undirected* throughput. One edge there aggregates domestic,
+international, transit and re-export journeys into a single number, and its country ranking
+adds each edge's full energy to every destination it serves — multi-counting the same food
+about 46 times. It ranks connectivity; it cannot say "import" or "export".
+
+That directional structure existed in the source parquets and was collapsed when the global
+JSON was built. This app un-collapses it for one country. Quantities here are directional,
+single-counted, and tied to origin→destination admin-1 pairs.
+
+## Data
+
+| Stage | Output | Size |
+|---|---|---|
+| Source | `Output/Version8/PostProcessed/…/Flows_*.csv.gz` | 413 files, 47.7 M rows |
+| Extract | `data/canada_od_all.csv`, `canada_edges_all.csv`, `_parts_all/` | 3.1 M per-commodity edge rows |
+| Build | `public/data/` | **3.0 MB initial load** |
+
+The network ships as a packed binary — `edges.bin`, 41 bytes per edge — rather than JSON,
+which is what makes the full 70,198-edge network affordable instead of a truncated subset.
+Per-edge commodity detail is sharded 256 ways and fetched only when an edge is clicked.
+
+Food groups come from `data/food_groups.csv`, a hand-built crosswalk covering all 82 FAO Food
+Balance Sheet commodities across 12 groups.
+
+## Reading the numbers honestly
+
+- **Concentration is sourcing breadth, not substitutability.** HHI counts partner countries
+  by tonnage; two suppliers in one climate zone count as two.
+- **`exposure_index` (calorie share × HHI) ranks, it does not predict.** Not a probability, a
+  forecast or an impact estimate.
+- **Edge throughput is not capacity or criticality.** No alternative-route counterfactual is
+  modelled, so a busy edge is not automatically irreplaceable.
+- **Provinces are the Canadian end of the journey** — destination for imports, origin for
+  exports — not consumption or production.
+- **Domestic flows are sparse by construction**; the source models surplus-to-deficit
+  redistribution only, so they are not comparable in magnitude to imports or exports.
+- **No balance or self-sufficiency figures**, deliberately: imports and exports are different
+  commodity mixes and differencing them would invent a number the data cannot support.
+- Route totals fall ~10% below origin–destination totals — some flows have no routable path.
+
+## Development
+
+```bash
+npm install
+cp .env.example .env        # add a Mapbox public token
+npm run dev
+```
+
+Rebuilding the payload needs the analysis outputs under `Output/Version8/` and Python with
+pandas, numpy and pyarrow:
+
+```bash
+python3 scripts/build_app_data_v2.py --tag all
+```
+
+```bash
+python3 scripts/check_palette.py
+```
+
+`check_palette.py` guards the food-group palette's perceptual separation and must pass before
+any colour change ships.
+
+## Stack
+
+React 19 · TypeScript · Vite · Recharts · Mapbox GL + deck.gl · Tailwind 4. Static site, no
+backend; every aggregate is precomputed in Python at build time.
+
+## Documentation
+
+- `docs/BRIEF.md` — the one question, data contract, views, non-goals
+- `CLAUDE.md` — repo conventions and the data-semantics rules

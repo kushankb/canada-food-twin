@@ -1,0 +1,13 @@
+{
+  "tag": "all",
+  "scopes": [
+    "canada",
+    "maritime_port"
+  ],
+  "unique_edges": 58220,
+  "resolved": 58220,
+  "pct_resolved": 100.0,
+  "unresolved_sample": [],
+  "geometry_source": "Infrastructure_networks node coordinates (straight segments); upgrade to RoadEdges_Complete_infrastructure.csv.gz for true polylines",
+  "note": "ForPaper All_FoodFlows_withlinestrings covers only 31.6% of these edges (53.1% allowing reversed orientation) and must not be used as the source"
+}

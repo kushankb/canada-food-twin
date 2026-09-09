@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.local
+.DS_Store
+*.log
+
+# Intermediate extraction artefacts — regenerate with scripts/, do not commit.
+# The shipped payload lives in public/data/ and IS committed.
+data/_parts_*/
+data/_nodes_cache/
+data/*.csv
+data/*.parquet
+!data/food_groups.csv
