@@ -50,6 +50,10 @@
     `${Math.abs(la).toFixed(2)}°${la >= 0 ? 'N' : 'S'}, ${Math.abs(lo).toFixed(2)}°${lo >= 0 ? 'E' : 'W'}`
 
   let topCommodity = $derived(net.meta.codes.commodity[net.topc[index]])
+  // Shares are rounded to 3 dp at build time: a 0 means "below 0.05%", not none. Drop those
+  // rows rather than print a false "0%".
+  let commodities = $derived((detail?.c ?? []).filter((c) => c.s > 0))
+  let partners = $derived((detail?.p ?? []).filter((p) => p.s > 0))
   const partnerName = (k: string) =>
     dir === 'within' ? (places.provinces[k]?.name ?? k) : (places.countries[k]?.name ?? k)
   let partnerTitle = $derived(
@@ -110,9 +114,9 @@
 
   <div class="detail-section">
     <div class="detail-section-title">Top commodities</div>
-    {#if detail?.c?.length}
+    {#if commodities.length}
       <div class="detail-bars">
-        {#each detail.c as c}
+        {#each commodities as c}
           <div class="detail-bar-row">
             <div class="detail-bar-label" title={c.k}>{c.k}</div>
             <div class="detail-bar-track">
@@ -129,11 +133,11 @@
     {/if}
   </div>
 
-  {#if detail?.p?.length}
+  {#if partners.length}
     <div class="detail-section">
       <div class="detail-section-title">{partnerTitle}</div>
       <div class="detail-bars">
-        {#each detail.p as p}
+        {#each partners as p}
           <div class="detail-bar-row">
             <div class="detail-bar-label" title={partnerName(p.k)}>{partnerName(p.k)}</div>
             <div class="detail-bar-track">
