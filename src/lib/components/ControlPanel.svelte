@@ -18,11 +18,12 @@
     onToggleMode: (code: number) => void
     widthScale: number
     onWidthScale: (v: number) => void
+    provinceAllocated?: boolean
   }
 
   let {
     direction, onDirection, headline, places, layers, onToggle, modes, onToggleMode,
-    widthScale, onWidthScale,
+    widthScale, onWidthScale, provinceAllocated = false,
   }: Props = $props()
 
   let tooltipKey = $state<LayerKey | null>(null)
@@ -110,7 +111,11 @@
         <span class="layer-dot"></span>
         <span class="layer-btn-text">
           <span class="layer-btn-label">{L.label}</span>
-          <span class="layer-btn-unit">{unavailable ? 'not used for domestic moves' : L.unit}</span>
+          <span class="layer-btn-unit">
+            {unavailable ? 'not used for domestic moves'
+              : key === 'provinces' && provinceAllocated ? 'allocated by population, not ports of entry'
+              : L.unit}
+          </span>
         </span>
       </button>
     </div>

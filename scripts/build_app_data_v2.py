@@ -397,6 +397,29 @@ def build_partner_detail(od):
     return out
 
 
+def measure_province_mix(od):
+    """Is a direction's province-level partner mix informative, or the national mix copied?
+
+    For imports the source splits national supply across provinces by population weight
+    (weight_pop in Output/Demand_allocated/Demand_subnational.csv), so every province
+    carries the same partner and food-group mix (spread ~0.002). Export origins come from
+    production and genuinely differ (spread ~0.26). Measured here rather than assumed, so the UI
+    hides copied breakdowns only while the data actually has this property.
+    """
+    out = {}
+    for d in ("import", "export"):
+        sub = od[(od.direction == d) & od.ca_admin.isin(list(PROVINCES))]
+        if sub.empty:
+            continue
+        pm = sub.groupby(["ca_admin", "partner"]).tonnes.sum().unstack(fill_value=0)
+        pm = pm.div(pm.sum(axis=1), axis=0)
+        weight = sub.groupby("ca_admin").tonnes.sum() / sub.tonnes.sum()
+        big = weight[weight > 0.03].index
+        spread = float((pm.loc[big].max() - pm.loc[big].min()).max()) if len(big) > 1 else 0.0
+        out[d] = {"partner_share_spread": round(spread, 4), "allocated": spread < 0.01}
+    return out
+
+
 def build_places(src, od):
     """Names and label points for every partner country and Canadian province."""
     wanted = set(od.from_iso3.dropna()) | set(od.to_iso3.dropna())
@@ -596,6 +619,10 @@ def main():
     choropleth = build_choropleth(od)
     partner_detail = build_partner_detail(od)
     places = build_places(args.places_src, od)
+    province_mix = measure_province_mix(od)
+    for d, v in province_mix.items():
+        print(f"province mix {d:7s}: largest spread of any partner's share across provinces = "
+              f"{v['partner_share_spread']:.4f} -> {'ALLOCATED (national mix copied)' if v['allocated'] else 'informative'}")
 
     buf, edges_meta, kept = pack_edges(edges, geo, ec, kcal_per_t)
     with open(os.path.join(OUT, "edges.bin"), "wb") as f:
@@ -621,6 +648,7 @@ def main():
         "routeTypes": ROUTE_TYPES,
         "provinces": [{"admin": k, "name": v[0], "code": v[1]} for k, v in PROVINCES.items()],
         "hasPartnerEdges": bool(edges_meta["partnerEdges"]),
+        "provinceMix": province_mix,
         "headline": {
             d: {"tonnes": round(float(od[od.direction == d].tonnes.sum()), 1),
                 "kcal": float(np.nansum(od[od.direction == d].kcal)),
@@ -659,8 +687,12 @@ def main():
             "Within-Canada domestic distribution is sparse in the source "
             "(Data_WithinCountry covers surplus->deficit redistribution only).",
             "Route-level totals fall ~10% below O-D totals: some flows have no routable path.",
-            "Provinces are the Canadian end of each journey -- destination for imports, origin "
-            "for exports -- not the province of final consumption or of primary production.",
+            "Provinces are the Canadian end of each journey. For exports that is where the food is "
+            "produced, allocated from production data, and the mix differs by province. For imports "
+            "it is where the food is consumed, modelled: the source splits national imports across "
+            "provinces in proportion to each province's share of population, so every province "
+            "carries the same partner and food-group mix. The import "
+            "province layer is a demand map, not a map of ports of entry.",
         ],
     }
 

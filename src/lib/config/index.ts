@@ -37,15 +37,16 @@ export interface DirectionMeta {
 export const DIRECTIONS: DirectionMeta[] = [
   {
     id: 'import', label: 'Imports', short: 'imports', flowPhrase: 'Canada’s imports',
-    partnerNoun: 'Source country', towards: 'from', regionRole: 'Province of arrival',
+    partnerNoun: 'Source country', towards: 'from', regionRole: 'Destination province',
     desc: 'Food produced abroad and delivered into Canada. Partners are the countries it is ' +
-      'shipped from; provinces are where the journey ends inside Canada.',
+      'shipped from. Which province it ends up in is allocated by population share, not ' +
+      'observed at the border.',
   },
   {
     id: 'export', label: 'Exports', short: 'exports', flowPhrase: 'Canada’s exports',
-    partnerNoun: 'Destination', towards: 'to', regionRole: 'Province of departure',
+    partnerNoun: 'Destination', towards: 'to', regionRole: 'Province of origin',
     desc: 'Food produced in Canada and delivered abroad. Partners are the countries it is ' +
-      'destined for; provinces are where the journey begins inside Canada.',
+      'destined for; provinces are where it is produced, as allocated from production data.',
   },
   {
     id: 'within', label: 'Domestic', short: 'domestic moves', flowPhrase: 'domestic redistribution',
@@ -147,9 +148,10 @@ export const LAYERS = {
     source: 'Global Food Twin V8 origin–destination flows',
   },
   provinces: {
-    label: 'Provinces', unit: 'where trade enters or leaves',
-    desc: 'Provinces shaded by their share of the trade, as the Canadian end of each journey — ' +
-      'destination for imports, origin for exports. Not consumption, not production.',
+    label: 'Provinces', unit: 'where trade starts or ends',
+    desc: 'Provinces shaded by their share of the trade. For exports this follows production — ' +
+      'where the food is grown. For imports it is allocated by population share, so every ' +
+      'province carries the national partner mix: a population map, not a map of ports of entry.',
     source: 'Global Food Twin V8 origin–destination flows',
   },
 } as const

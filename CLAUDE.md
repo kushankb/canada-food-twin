@@ -86,8 +86,13 @@ on the words "import" and "export". What does apply:
    computed on partner countries by tonnage. Never present a low HHI as resilience.
 2. **`exposure_index` is a ranking device** (calorie share × HHI) — never a probability or forecast.
 3. **Segment throughput is not capacity or criticality.** No alternative-route counterfactual exists.
-4. **Provinces are the Canadian end of the journey** — destination for imports, origin for
-   exports. Not consumption, not production.
+4. **Import provinces are a demand allocation; export provinces are real.** The source splits
+   national imports across provinces by population weight (`weight_pop` in
+   `Output/Demand_allocated/Demand_subnational.csv`; r = 0.999 with the 2021 census), so every
+   province carries the national partner and food-group mix (spread
+   0.0015). Export origins come from production allocation and differ by up to 0.26. The build
+   measures this (`meta.provinceMix[dir].allocated`) and the UI hides copied breakdowns where it
+   holds. Never present an import province as a port of entry.
 5. **For re-export flows the partner is the re-exporter**, not where the food was grown.
 6. **Route mix, not mode mix.** Land/sea and direct/re-export shares come from O-D `flow_type`,
    one count per journey. Never sum segment tonnage by mode — a truck trip crosses hundreds of

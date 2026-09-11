@@ -92,8 +92,12 @@ carries direction, units and coverage. The specific things that must never be im
   or impact estimate.
 - Edge throughput is **not** spare capacity, and a high-throughput edge is **not**
   automatically irreplaceable — there is no no-alternative-route counterfactual here.
-- Provinces are the **Canadian end of the journey** (destination for imports, origin for
-  exports), not final consumption or primary production.
+- **Import provinces are a demand allocation.** The source splits national imports across
+  provinces by population weight (`weight_pop` in `Demand_subnational.csv`; r = 0.999 with the
+  2021 census), so every province has the
+  national partner and food-group mix. The build measures this and the UI hides the copied
+  breakdowns; the import province layer is labelled a demand map, not ports of entry. **Export
+  provinces are real** — they come from production allocation and differ by province.
 - Domestic flows are **sparse by construction**: the source models surplus-to-deficit
   redistribution only.
 - Route totals fall ~10% below O-D totals; some flows have no routable path.

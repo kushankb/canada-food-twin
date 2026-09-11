@@ -153,7 +153,9 @@
     return `<div class="popup-title">${name}</div>
       <div class="popup-row"><span class="popup-key">Share of Canada’s ${g}${dm.short}</span><span class="popup-value">${pct(t / provinceTotal)}</span></div>
       <div class="popup-row"><span class="popup-key">Tonnage</span><span class="popup-value">${formatTonnes(t)}</span></div>
-      <div class="popup-range">${esc(dm.regionRole)} · click for detail</div>`
+      <div class="popup-range">${data.meta.provinceMix?.[direction]?.allocated
+        ? 'Allocated by population share, not ports of entry'
+        : esc(dm.regionRole)} · click for detail</div>`
   }
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -258,6 +260,7 @@
     onToggleMode={toggleMode}
     {widthScale}
     onWidthScale={(v) => (widthScale = v)}
+    provinceAllocated={!!data.meta.provinceMix?.[direction]?.allocated}
   />
 
   <InfoPanel caveats={data.meta.caveats} />

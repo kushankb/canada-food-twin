@@ -130,6 +130,9 @@ export interface Meta {
   routeTypes: string[]
   provinces: { admin: string; name: string; code: string }[]
   hasPartnerEdges: boolean
+  /** Per direction: is the province partner mix informative, or the national mix split by
+   *  demand? Measured by measure_province_mix() in the build. */
+  provinceMix?: Record<string, { partner_share_spread: number; allocated: boolean }>
   headline: Record<Direction, Headline>
   caveats: string[]
 }

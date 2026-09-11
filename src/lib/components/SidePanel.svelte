@@ -72,6 +72,10 @@
   let maxCal = $derived(Math.max(0.0001, ...groupRows.map((r) => r.calorie_share)))
   let verb = $derived(direction === 'import' ? 'supplies' : 'takes')
   let groupWord = $derived(groupRow ? `${group(groupRow.food_group).label.toLowerCase()} ` : '')
+  // Where the build measured the province mix as a demand split of the national mix (imports),
+  // province breakdowns are copies of the national ones — hidden rather than shown as if they
+  // were observed ports of entry.
+  let allocated = $derived(!!data.meta.provinceMix?.[direction]?.allocated)
 </script>
 
 {#snippet bars(rows: Bar[], max: number)}
@@ -167,11 +171,13 @@
           groupRow.top_partners.slice(0, 6).map((p) => ({ label: cName(p.iso3), share: p.share, color: dirColor })),
           groupRow.top_partners[0]?.share ?? 1,
         )}
-        <div class="sp-section-label">{dm.regionRole}</div>
-        {@render bars(
-          groupRow.provinces.slice(0, 6).map((p) => ({ label: pName(p.admin), share: p.share, color: '#c8cdd6' })),
-          groupRow.provinces[0]?.share ?? 1,
-        )}
+        {#if !allocated}
+          <div class="sp-section-label">{dm.regionRole}</div>
+          {@render bars(
+            groupRow.provinces.slice(0, 6).map((p) => ({ label: pName(p.admin), share: p.share, color: '#c8cdd6' })),
+            groupRow.provinces[0]?.share ?? 1,
+          )}
+        {/if}
         <div class="sp-section-label">Commodities</div>
         {@render bars(
           groupRow.commodities.slice(0, 6).map((c) => ({ label: c.commodity, share: c.share, color: group(groupRow.food_group).color })),
@@ -231,11 +237,18 @@
         partner.commodities[0]?.share ?? 1,
       )}
 
-      <div class="sp-section-label">{dm.regionRole}</div>
-      {@render bars(
-        partner.provinces.slice(0, 6).map((p) => ({ label: pName(p.admin), share: p.share, color: dirColor })),
-        partner.provinces[0]?.share ?? 1,
-      )}
+      {#if !allocated}
+        <div class="sp-section-label">{dm.regionRole}</div>
+        {@render bars(
+          partner.provinces.slice(0, 6).map((p) => ({ label: pName(p.admin), share: p.share, color: dirColor })),
+          partner.provinces[0]?.share ?? 1,
+        )}
+      {:else}
+        <p class="sp-muted sp-small" style="margin-top: 12px">
+          Which province this food ends up in is allocated by population share, the same way for
+          every partner.
+        </p>
+      {/if}
 
       {@render routeMix(partner.routes)}
     {/if}
@@ -251,6 +264,16 @@
         <strong style="color: var(--dir)">{formatShare(province.share_of_national)}</strong> of {dm.flowPhrase}
         · {formatTonnes(province.tonnes)}
       </div>
+      {#if allocated}
+        <p class="sp-note">
+          <strong>Modelled, not observed.</strong> The source splits Canada’s {dm.short} across
+          provinces in proportion to each province’s share of population, so {pName(selectedProvince)} carries the
+          same partner and food-group mix as the country as a whole{head.top_partner
+            ? ` — ${cName(head.top_partner)} ${formatShare(head.top_partner_share)}, as everywhere else`
+            : ''}. Its {formatShare(province.share_of_national)} share is its share of population.
+        </p>
+        <p class="sp-muted sp-small">Export origins come from production and do differ by province — switch to Exports to see them.</p>
+      {:else}
       {#if direction !== 'within'}
         <div class="sp-metrics">
           <div><b>{formatCount(province.n_partners)}</b><span>partner countries</span></div>
@@ -276,9 +299,11 @@
       )}
       {@render routeMix(province.routes)}
       <p class="sp-muted sp-small">
-        The Canadian end of each journey — {direction === 'import' ? 'where imports arrive' : 'where the journey begins'} —
-        not where the food is eaten or grown.
+        {direction === 'export'
+          ? 'Where export journeys begin — allocated from where the food is produced.'
+          : 'Where the journey begins.'}
       </p>
+      {/if}
     {/if}
   {/if}
 </div>

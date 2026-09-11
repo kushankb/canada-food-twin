@@ -72,8 +72,12 @@ Balance Sheet commodities across 12 groups.
   forecast or an impact estimate.
 - **Edge throughput is not capacity or criticality.** No alternative-route counterfactual is
   modelled, so a busy edge is not automatically irreplaceable.
-- **Provinces are the Canadian end of the journey** — destination for imports, origin for
-  exports — not consumption or production.
+- **Import provinces are modelled, export provinces are not.** The source splits Canada's
+  imports across provinces in proportion to each province's share of population (the source's
+  `weight_pop`; r = 0.999 against the 2021 census), so every province shows the same partner mix — the US at
+  74.6%, everywhere. The import province layer is a demand map, not ports of entry, and the app
+  says so. Export origins come from production and genuinely differ: Saskatchewan ships 40% of
+  exports, with China as its largest buyer.
 - **Domestic flows are sparse by construction**; the source models surplus-to-deficit
   redistribution only, so they are not comparable in magnitude to imports or exports.
 - **No balance or self-sufficiency figures**, deliberately: imports and exports are different
