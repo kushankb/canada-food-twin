@@ -199,7 +199,7 @@ def process_file(path, ftype, commodity, chunksize, od_acc, edge_acc, stats):
     """Stream one route file, keeping only journeys that touch Canada.
 
     od_acc:   (from_admin, to_admin, commodity, ftype, direction) -> kg  [deduped per O-D]
-    edge_acc: (edge_id, direction)                                -> kg  [per distinct edge]
+    edge_acc: (edge_id, direction, partner)                         -> kg  [per distinct edge]
     Both accumulators are per-commodity and are flushed to disk after each commodity, so
     memory stays flat across the full 78-commodity pass.
     """
@@ -258,9 +258,14 @@ def process_file(path, ftype, commodity, chunksize, od_acc, edge_acc, stats):
                 seen_od.add(od_key)
                 od_acc[od_key] += kg
 
-            # edge throughput: the journey's tonnage passes over each distinct edge once
+            # edge throughput: the journey's tonnage passes over each distinct edge once.
+            # Keyed by partner too, so the app can say which countries an edge serves:
+            # the foreign origin for imports, the foreign destination for exports, and the
+            # destination province for domestic moves.
+            partner = oo if direction == "import" else (dd if direction == "export"
+                                                        else row.to_id_admin)
             for e in set(parse_paths(row.paths)):
-                edge_acc[(e, direction)] += kg
+                edge_acc[(e, direction, partner)] += kg
 
     stats["files"] += 1
 
@@ -284,8 +289,8 @@ def od_frame(od_acc, fmap):
 
 
 def edge_frame(edge_acc, commodity):
-    e = pd.DataFrame([(k[0], k[1], v) for k, v in edge_acc.items()],
-                     columns=["edge_id", "direction", "kg"])
+    e = pd.DataFrame([(k[0], k[1], k[2], v) for k, v in edge_acc.items()],
+                     columns=["edge_id", "direction", "partner", "kg"])
     if e.empty:
         return e.assign(commodity=[], tonnes=[], scope=[], mode=[])
     e["commodity"] = commodity

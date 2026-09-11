@@ -1,83 +1,109 @@
 # CLAUDE.md — Canada Food Twin
 
-Static React app: where Canada's food comes from, where it goes, and the infrastructure that
-moves it. Deployed to https://canadafoodsupply.kushankbajaj.com via GitHub Pages.
+Map-first static app: where Canada's food comes from, where it goes, and the routes it takes.
+Deployed to https://canadafoodsupply.kushankbajaj.com via GitHub Pages. The Canada companion to
+globalfoodsupply.kushankbajaj.com, whose source is `~/Desktop/FoodTransportInfrastructure` —
+this app copies its layout, chrome (`src/lib/styles/map.css`), component split and boundary
+tilesets, and swaps the payload for directional Canada data.
 
-Read `docs/BRIEF.md` first — it holds the one question, the data contract, the view list and
-the non-goals. This file covers how to work in the repo.
+Read `docs/BRIEF.md` first — the one question, data contract, layers and panels, non-goals.
 
 ## Commands
 
 ```bash
-npm run dev                                  # vite dev server
-npm run build                                # tsc -b && vite build -> dist/
-npm run lint
-python3 scripts/build_app_data_v2.py --tag all   # rebuild public/data/ (~3 min)
-python3 scripts/check_palette.py                 # must PASS before palette changes ship
+npm run dev                  # vite dev
+npm run build                # static site -> build/
+npm run check                # svelte-check (types + a11y)
+python3 scripts/check_palette.py          # must PASS before any food-group colour changes
+
+# Rebuild the payload (~3 min). allp = the partner-keyed extraction.
+python3 scripts/build_app_data_v2.py --tag all --parts-tag allp
+
+# Re-extract from the V8 route files (~16 min). Only needed if the source changes.
+python3 scripts/extract_canada_flows.py --commodity ALL --tag allp
 ```
 
-## Architecture
+## Stack
 
-Static site. No backend, no runtime computation Python could do once at build time.
+SvelteKit 2 + Svelte 5 runes (`$state`, `$derived`, `$props`, `{@render}`), adapter-static
+with `prerender = true` and `ssr = false` (mapbox-gl and deck.gl need a browser). Mapbox GL v3
+basemap + deck.gl `MapboxOverlay` (interleaved). Tailwind 4 + daisyUI 5 (sunset) for the page;
+hand-written CSS custom properties for map chrome. TypeScript throughout.
+
+## Layout
 
 ```
-scripts/          Python. Build-time only.
-  extract_canada_flows.py   source parquets -> data/canada_*.csv  (slow, ~16 min)
-  attach_geometry.py        edge_id -> endpoint coordinates
-  build_app_data_v2.py      data/ -> public/data/                 (the one to rerun)
-  check_palette.py          OKLab separation guard for the food-group palette
-data/             Intermediate artefacts. Gitignored except food_groups.csv.
-public/data/      The shipped payload. Committed.
-src/config/       Every label, colour, unit, code and definition. Read this first.
-src/utils/        Formatters. No number is formatted anywhere else.
-src/hooks/        useData — one fetch, module-level cache.
-src/types/        Shapes of public/data/*. Mirrors build_app_data_v2.py.
+scripts/                 Python, build-time only
+  extract_canada_flows.py    V8 route files -> data/canada_*_<tag>.csv + _parts_<tag>/
+  attach_geometry.py         edge_id -> endpoint coordinates
+  build_app_data_v2.py       data/ -> static/data/   (the one to rerun)
+  check_palette.py           OKLab separation guard for the food-group palette
+data/                    Intermediate artefacts. Gitignored except food_groups.csv
+static/data/             The shipped payload. Committed.
+src/lib/config/          Every label, colour, unit, code, tileset and definition. Read first.
+src/lib/data.ts          Loader: one fetch of everything, module-level cache, on-demand shards
+src/lib/network.ts       Filters the packed network into deck.gl binary attributes
+src/lib/components/      Map, ControlPanel, Legend, SidePanel, DetailPopup, SearchBar, ...
+src/routes/+page.svelte  State and wiring
 ```
 
 ## Rules specific to this repo
 
-**Direction is the primary axis.** `import | export | within` is app-level state that every
-view re-reads. It is never a per-chart filter, and switching it never refetches.
+**Direction is the primary axis.** `import | export | within` is page state that every layer
+and panel re-reads. Switching it never refetches.
 
-**`edges.bin` and `edges_meta.json` are one unit.** The binary layout is defined in
-`pack_edges()` in `build_app_data_v2.py` and decoded in `loadNetwork()` in
-`src/hooks/useData.ts`. Change one, change the other, and rerun the build — the loader
-throws on a byte-length mismatch rather than silently misreading. `codes.foodGroup` order is
-the wire format for the `fg` section; never reorder it without rebuilding.
+**`edges.bin` + `edges_meta.json` are one unit.** Layout is defined in `pack_edges()` and decoded
+in `loadNetwork()` (`src/lib/data.ts`). Change both together and rebuild; the loader throws on a
+byte-length mismatch. `codes.foodGroup` order is the wire format for the `fg` section. `SCOPES`
+is append-only (`connector` was added as code 3).
 
-**Per-edge commodity detail is sharded.** `ec/<index % 256>.json`, fetched on click. Do not
-load it eagerly; whole, it is five times the size of the network.
+**Two things load on demand, never eagerly.** `ec/<index % 256>.json` (a clicked segment's top
+commodities and partners) and `pe/<direction>/<partner>.bin` (every segment a selected
+partner's trade uses — uint32 indices then float32 tonnes; largest file ~134 KB).
+
+**The Pacific is folded.** Longitudes east of `MAP.foldLongitude` (100°E) are shifted −360° in
+`loadNetwork()`, so trans-Pacific routes run west from BC without breaking at the date line.
+Anything that places the camera on a partner (search `flyTo`) must apply the same fold.
+
+**Choropleths go through feature-state.** Partner countries and provinces use the shared
+tilesets `kushankb.01l11tz3` (countries, `iso3`) and `kushankb.69o1u9mn` (admin, `ID` = GADM
+`CAN.9_1`). Values are set with `setFeatureState({v})`; layers are added once per style load.
+
+**Mapbox token.** `PUBLIC_MAPBOX_TOKEN`, read through `import.meta.env` (`envPrefix` includes
+`PUBLIC_`) so a missing token shows a message on the map instead of failing the build. CI
+reads it from the repo secret of the same name.
 
 **Palette changes must pass `check_palette.py`.** Four food-group colours deliberately differ
-from the house set — two new (Sugar and Sweeteners, Stimulants and Spices), two re-separated
-(Fruits, Pulses). The reasoning is in the header of `src/config/palette.ts`.
+from the house set; the reasoning is in the header of `src/lib/config/palette.ts`.
 
 ## Data semantics — do not violate these
 
-This app's data is **directional and single-counted**, unlike the global app's. The ~46x
-multi-counting caveat that governs `globalfoodsupply` does **not** apply here, and neither
-does its ban on the words "import" and "export". What does apply:
+This data is **directional and single-counted**, unlike the global app's. The ~46x
+multi-counting caveat that governs globalfoodsupply does **not** apply, and neither does its ban
+on the words "import" and "export". What does apply:
 
-1. **Concentration is sourcing breadth, not substitutability.** HHI and effective partners
-   are computed on partner countries by tonnage. Two suppliers sharing a climate zone count
-   as two independent partners. Never present a low HHI as resilience.
-2. **`exposure_index` is a ranking device.** Calorie share × HHI. Not a probability, not a
-   forecast, not an impact estimate. Say "ranks highest", never "is most likely to fail".
-3. **Edge throughput is not capacity or criticality.** A high-throughput edge is not
-   automatically irreplaceable; there is no alternative-route counterfactual in this data.
+1. **Concentration is sourcing breadth, not substitutability.** HHI and effective partners are
+   computed on partner countries by tonnage. Never present a low HHI as resilience.
+2. **`exposure_index` is a ranking device** (calorie share × HHI) — never a probability or forecast.
+3. **Segment throughput is not capacity or criticality.** No alternative-route counterfactual exists.
 4. **Provinces are the Canadian end of the journey** — destination for imports, origin for
-   exports. Not final consumption, not primary production.
-5. **Domestic flows are sparse by construction** (surplus-to-deficit redistribution only).
-   Never compare their magnitude to imports or exports as if both were complete.
-6. **No balance figures.** Imports and exports are different commodity mixes; do not subtract
-   them or derive a self-sufficiency ratio.
-7. **Route totals fall ~10% below O-D totals** — some flows have no routable path. Network
-   view sums will not match headline trade figures, and that is expected.
+   exports. Not consumption, not production.
+5. **For re-export flows the partner is the re-exporter**, not where the food was grown.
+6. **Route mix, not mode mix.** Land/sea and direct/re-export shares come from O-D `flow_type`,
+   one count per journey. Never sum segment tonnage by mode — a truck trip crosses hundreds of
+   road segments and would dominate.
+7. **Connectors are hidden, not deleted.** `scope = connector` edges (a node to a region
+   centroid) carry real tonnage but no real path.
+8. **Long sea/port legs and a few rail links are schematic straight lines** and some cross land
+   (Great Lakes–St. Lawrence). The global app has the same geometry; there is no better source.
+9. **Domestic flows are sparse by construction**; never compare their size to imports or exports.
+10. **No balance or self-sufficiency figures.** Imports and exports are different commodity mixes.
+11. **Segment totals fall ~10% below O-D totals** — some flows have no routable path.
 
 ## Conventions
 
-- Colours, labels, units, codes: `src/config/`. Never inline in a component.
-- Numbers: `src/utils/formatters`. Never `toFixed` in a component.
-- Data paths: `import.meta.env.BASE_URL`. Never a hard-coded leading `/`.
-- Every headline number states its direction, units and coverage.
+- Colours, labels, units, codes, tilesets: `src/lib/config/`. Never inline in a component.
+- Numbers: `src/lib/utils/formatters.ts`. Never `toFixed` a displayed number in a component.
+- Data paths: `$app/paths` `base`. Never a hard-coded leading `/`.
 - Legends are controls: click to isolate, click again to reset, `role="button"` + keyboard.
+- Every headline number states its direction, units and scope.

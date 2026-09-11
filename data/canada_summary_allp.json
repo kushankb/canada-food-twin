@@ -1,0 +1,1293 @@
+{
+  "commodity": "ALL",
+  "units": {
+    "tonnes": "metric tonnes",
+    "kcal": "kilocalories",
+    "note": "source flow_value is kg; nutrient factors are per-kg and exact per (commodity x origin country)"
+  },
+  "scan": {
+    "rows_scanned": 47729575,
+    "rows_canada": 612352,
+    "files": 413,
+    "truncated_source_files": 2,
+    "truncated_list": [
+      "Flows_Barley and products.csv.gz (EOFError)",
+      "Flows_Fats, Animals, Raw.csv.gz (EOFError)"
+    ],
+    "elapsed_sec": 953.5
+  },
+  "od_rows_missing_nutrient_factor": 699,
+  "trade": {
+    "import": {
+      "tonnes": 21695750.8,
+      "kcal": 38727737631372.516,
+      "od_pairs": 86603,
+      "by_flow_type": {
+        "land_dom": 9578899.2,
+        "land_re": 5184625.3,
+        "sea_dom": 5635881.4,
+        "sea_re": 1296344.8
+      }
+    },
+    "export": {
+      "tonnes": 65503489.3,
+      "kcal": 209362856018701.03,
+      "od_pairs": 83159,
+      "by_flow_type": {
+        "land_dom": 6092480.4,
+        "land_re": 2263060.8,
+        "sea_dom": 52830103.0,
+        "sea_re": 4317845.1
+      }
+    },
+    "within": {
+      "tonnes": 8664903.3,
+      "kcal": 15786760188258.213,
+      "od_pairs": 732,
+      "by_flow_type": {
+        "within": 8664903.3
+      }
+    }
+  },
+  "partners": {
+    "import": {
+      "USA": 16193814.0,
+      "BRA": 561348.1,
+      "MEX": 542063.0,
+      "CHN": 529525.0,
+      "THA": 311854.1,
+      "GTM": 255218.6,
+      "IND": 253614.0,
+      "ITA": 234734.2,
+      "VNM": 213175.9,
+      "ESP": 180497.6,
+      "PER": 147159.4,
+      "CHL": 146533.7,
+      "HND": 142993.1,
+      "ZAF": 137063.3,
+      "AUS": 118225.5,
+      "ARG": 113540.7,
+      "FRA": 108746.0,
+      "PHL": 102086.6,
+      "NZL": 100817.8,
+      "IDN": 79082.0
+    },
+    "export": {
+      "CHN": 12712662.2,
+      "USA": 10231112.4,
+      "JPN": 5164921.5,
+      "BGD": 2566234.8,
+      "IDN": 2480849.9,
+      "ITA": 2076781.3,
+      "PER": 1852212.7,
+      "ARE": 1819338.8,
+      "FRA": 1479661.2,
+      "COL": 1458331.0,
+      "MEX": 1417535.1,
+      "MAR": 1197112.6,
+      "IND": 1068991.0,
+      "NLD": 1018270.8,
+      "PAK": 1003890.7,
+      "GBR": 979667.1,
+      "TUR": 979367.0,
+      "NGA": 959159.6,
+      "BEL": 936993.3,
+      "AUS": 911186.6
+    },
+    "within": {
+      "CAN": 8664903.3
+    }
+  },
+  "concentration": {
+    "import": {
+      "n_partners": 145,
+      "hhi": 0.5602,
+      "effective_partners": 1.79,
+      "top1_share": 0.7464,
+      "top3_share": 0.7973
+    },
+    "export": {
+      "n_partners": 175,
+      "hhi": 0.0788,
+      "effective_partners": 12.69,
+      "top1_share": 0.1941,
+      "top3_share": 0.4291
+    },
+    "within": {
+      "n_partners": 1,
+      "hhi": 1.0,
+      "effective_partners": 1.0,
+      "top1_share": 1.0,
+      "top3_share": 1.0
+    }
+  },
+  "top_commodities": {
+    "import": {
+      "Vegetables, other": {
+        "tonnes": 3238718.9,
+        "kcal": 727870951269.4241,
+        "n_partners": 85,
+        "hhi": 0.7212,
+        "effective_partners": 1.39,
+        "top_partner": "USA",
+        "top_partner_share": 0.8463
+      },
+      "Maize and products": {
+        "tonnes": 1940151.4,
+        "kcal": 5250879593831.311,
+        "n_partners": 51,
+        "hhi": 0.9762,
+        "effective_partners": 1.02,
+        "top_partner": "USA",
+        "top_partner_share": 0.988
+      },
+      "Oilcrops, Other": {
+        "tonnes": 1847521.6,
+        "kcal": 10551692584847.406,
+        "n_partners": 43,
+        "hhi": 0.9929,
+        "effective_partners": 1.01,
+        "top_partner": "USA",
+        "top_partner_share": 0.9964
+      },
+      "Fruits, other": {
+        "tonnes": 1570890.7,
+        "kcal": 924573065880.3579,
+        "n_partners": 88,
+        "hhi": 0.4944,
+        "effective_partners": 2.02,
+        "top_partner": "USA",
+        "top_partner_share": 0.6895
+      },
+      "Potatoes and products": {
+        "tonnes": 1272122.2,
+        "kcal": 806942040633.5009,
+        "n_partners": 37,
+        "hhi": 0.9629,
+        "effective_partners": 1.04,
+        "top_partner": "USA",
+        "top_partner_share": 0.9812
+      },
+      "Tomatoes and products": {
+        "tonnes": 1253091.3,
+        "kcal": 256117496674.12753,
+        "n_partners": 12,
+        "hhi": 0.9557,
+        "effective_partners": 1.05,
+        "top_partner": "USA",
+        "top_partner_share": 0.9774
+      },
+      "Bananas": {
+        "tonnes": 838920.4,
+        "kcal": 553468374812.6144,
+        "n_partners": 21,
+        "hhi": 0.5407,
+        "effective_partners": 1.85,
+        "top_partner": "USA",
+        "top_partner_share": 0.6971
+      },
+      "Oranges, Mandarines": {
+        "tonnes": 751185.3,
+        "kcal": 195057305154.23038,
+        "n_partners": 29,
+        "hhi": 0.299,
+        "effective_partners": 3.34,
+        "top_partner": "USA",
+        "top_partner_share": 0.4061
+      },
+      "Rice and products": {
+        "tonnes": 656474.2,
+        "kcal": 1583915814388.8618,
+        "n_partners": 45,
+        "hhi": 0.3091,
+        "effective_partners": 3.24,
+        "top_partner": "USA",
+        "top_partner_share": 0.4594
+      },
+      "Coffee and products": {
+        "tonnes": 560443.1,
+        "kcal": 171381336855.33447,
+        "n_partners": 59,
+        "hhi": 0.3861,
+        "effective_partners": 2.59,
+        "top_partner": "USA",
+        "top_partner_share": 0.6032
+      },
+      "Wine": {
+        "tonnes": 446541.7,
+        "kcal": 357536844638.2815,
+        "n_partners": 42,
+        "hhi": 0.1251,
+        "effective_partners": 8.0,
+        "top_partner": "ITA",
+        "top_partner_share": 0.1859
+      },
+      "Grapes and products (excl wine)": {
+        "tonnes": 368176.2,
+        "kcal": 234249250958.4011,
+        "n_partners": 25,
+        "hhi": 0.4436,
+        "effective_partners": 2.25,
+        "top_partner": "USA",
+        "top_partner_share": 0.6481
+      },
+      "Soyabeans": {
+        "tonnes": 348794.1,
+        "kcal": 849041858932.6349,
+        "n_partners": 17,
+        "hhi": 0.8757,
+        "effective_partners": 1.14,
+        "top_partner": "USA",
+        "top_partner_share": 0.9345
+      },
+      "Sugar (Raw Equivalent)": {
+        "tonnes": 347979.8,
+        "kcal": 1284616374609.4683,
+        "n_partners": 54,
+        "hhi": 0.3478,
+        "effective_partners": 2.88,
+        "top_partner": "BRA",
+        "top_partner_share": 0.5387
+      },
+      "Milk - Excluding Butter": {
+        "tonnes": 346101.2,
+        "kcal": 217077595267.07422,
+        "n_partners": 60,
+        "hhi": 0.3228,
+        "effective_partners": 3.1,
+        "top_partner": "USA",
+        "top_partner_share": 0.5507
+      },
+      "Wheat and products": {
+        "tonnes": 332087.2,
+        "kcal": 851474256593.1763,
+        "n_partners": 51,
+        "hhi": 0.4334,
+        "effective_partners": 2.31,
+        "top_partner": "USA",
+        "top_partner_share": 0.6328
+      },
+      "Cereals, Other": {
+        "tonnes": 323679.0,
+        "kcal": 321040718037.0738,
+        "n_partners": 54,
+        "hhi": 0.7509,
+        "effective_partners": 1.33,
+        "top_partner": "USA",
+        "top_partner_share": 0.8647
+      },
+      "Pelagic Fish": {
+        "tonnes": 310661.1,
+        "kcal": 304559862620.4802,
+        "n_partners": 64,
+        "hhi": 0.2807,
+        "effective_partners": 3.56,
+        "top_partner": "USA",
+        "top_partner_share": 0.4802
+      },
+      "Cocoa Beans and products": {
+        "tonnes": 307832.1,
+        "kcal": 1131998426310.4214,
+        "n_partners": 46,
+        "hhi": 0.2573,
+        "effective_partners": 3.89,
+        "top_partner": "USA",
+        "top_partner_share": 0.4654
+      },
+      "Pigmeat": {
+        "tonnes": 295402.2,
+        "kcal": 584050065364.2625,
+        "n_partners": 24,
+        "hhi": 0.7868,
+        "effective_partners": 1.27,
+        "top_partner": "USA",
+        "top_partner_share": 0.886
+      },
+      "Apples and products": {
+        "tonnes": 272973.8,
+        "kcal": 83587979789.78413,
+        "n_partners": 15,
+        "hhi": 0.7002,
+        "effective_partners": 1.43,
+        "top_partner": "USA",
+        "top_partner_share": 0.8337
+      },
+      "Bovine Meat": {
+        "tonnes": 248039.2,
+        "kcal": 337028894761.0841,
+        "n_partners": 22,
+        "hhi": 0.3708,
+        "effective_partners": 2.7,
+        "top_partner": "USA",
+        "top_partner_share": 0.585
+      },
+      "Poultry Meat": {
+        "tonnes": 223374.8,
+        "kcal": 303598534925.845,
+        "n_partners": 22,
+        "hhi": 0.7513,
+        "effective_partners": 1.33,
+        "top_partner": "USA",
+        "top_partner_share": 0.8639
+      },
+      "Freshwater Fish": {
+        "tonnes": 220736.8,
+        "kcal": 165224972921.42197,
+        "n_partners": 16,
+        "hhi": 0.456,
+        "effective_partners": 2.19,
+        "top_partner": "CHN",
+        "top_partner_share": 0.6231
+      },
+      "Onions": {
+        "tonnes": 207065.1,
+        "kcal": 80910934741.7785,
+        "n_partners": 18,
+        "hhi": 0.852,
+        "effective_partners": 1.17,
+        "top_partner": "USA",
+        "top_partner_share": 0.9224
+      },
+      "Rape and Mustardseed": {
+        "tonnes": 199403.4,
+        "kcal": 1021770206508.435,
+        "n_partners": 12,
+        "hhi": 0.9614,
+        "effective_partners": 1.04,
+        "top_partner": "USA",
+        "top_partner_share": 0.9804
+      },
+      "Groundnuts": {
+        "tonnes": 184994.8,
+        "kcal": 799967147574.8181,
+        "n_partners": 21,
+        "hhi": 0.5204,
+        "effective_partners": 1.92,
+        "top_partner": "USA",
+        "top_partner_share": 0.6945
+      },
+      "Pineapples and products": {
+        "tonnes": 182170.5,
+        "kcal": 28200190559.363403,
+        "n_partners": 20,
+        "hhi": 0.6954,
+        "effective_partners": 1.44,
+        "top_partner": "USA",
+        "top_partner_share": 0.8283
+      },
+      "Oilcrops Oil, Other": {
+        "tonnes": 181191.9,
+        "kcal": 1336751901244.6118,
+        "n_partners": 70,
+        "hhi": 0.4866,
+        "effective_partners": 2.05,
+        "top_partner": "USA",
+        "top_partner_share": 0.6846
+      },
+      "Pulses, Other and products": {
+        "tonnes": 161117.8,
+        "kcal": 566109085915.515,
+        "n_partners": 50,
+        "hhi": 0.6304,
+        "effective_partners": 1.59,
+        "top_partner": "USA",
+        "top_partner_share": 0.7888
+      },
+      "Nuts and products": {
+        "tonnes": 156286.7,
+        "kcal": 308216229707.98615,
+        "n_partners": 54,
+        "hhi": 0.3924,
+        "effective_partners": 2.55,
+        "top_partner": "USA",
+        "top_partner_share": 0.5869
+      },
+      "Barley and products": {
+        "tonnes": 151578.6,
+        "kcal": 341907764765.14777,
+        "n_partners": 5,
+        "hhi": 0.9801,
+        "effective_partners": 1.02,
+        "top_partner": "USA",
+        "top_partner_share": 0.9899
+      },
+      "Lemons, Limes and products": {
+        "tonnes": 149117.9,
+        "kcal": 33300569466.20214,
+        "n_partners": 26,
+        "hhi": 0.3277,
+        "effective_partners": 3.05,
+        "top_partner": "USA",
+        "top_partner_share": 0.5169
+      },
+      "Beans": {
+        "tonnes": 136831.2,
+        "kcal": 432705596768.14667,
+        "n_partners": 32,
+        "hhi": 0.7135,
+        "effective_partners": 1.4,
+        "top_partner": "USA",
+        "top_partner_share": 0.843
+      },
+      "Palm Oil": {
+        "tonnes": 125846.1,
+        "kcal": 1127645685288.3618,
+        "n_partners": 17,
+        "hhi": 0.3659,
+        "effective_partners": 2.73,
+        "top_partner": "USA",
+        "top_partner_share": 0.5104
+      },
+      "Crustaceans": {
+        "tonnes": 119878.4,
+        "kcal": 58415821610.906555,
+        "n_partners": 55,
+        "hhi": 0.1765,
+        "effective_partners": 5.66,
+        "top_partner": "CHN",
+        "top_partner_share": 0.2545
+      },
+      "Demersal Fish": {
+        "tonnes": 105919.2,
+        "kcal": 50396274067.674286,
+        "n_partners": 57,
+        "hhi": 0.2555,
+        "effective_partners": 3.91,
+        "top_partner": "CHN",
+        "top_partner_share": 0.3492
+      },
+      "Peas": {
+        "tonnes": 104247.0,
+        "kcal": 336191067308.8729,
+        "n_partners": 19,
+        "hhi": 0.9609,
+        "effective_partners": 1.04,
+        "top_partner": "USA",
+        "top_partner_share": 0.9802
+      },
+      "Grapefruit and products": {
+        "tonnes": 84363.1,
+        "kcal": 18522679039.600327,
+        "n_partners": 18,
+        "hhi": 0.3242,
+        "effective_partners": 3.08,
+        "top_partner": "USA",
+        "top_partner_share": 0.5062
+      },
+      "Sweet potatoes": {
+        "tonnes": 80392.3,
+        "kcal": 78694387297.98833,
+        "n_partners": 14,
+        "hhi": 0.8422,
+        "effective_partners": 1.19,
+        "top_partner": "USA",
+        "top_partner_share": 0.9165
+      }
+    },
+    "export": {
+      "Wheat and products": {
+        "tonnes": 26096136.3,
+        "kcal": 63120249781938.984,
+        "n_partners": 104,
+        "hhi": 0.0652,
+        "effective_partners": 15.33,
+        "top_partner": "CHN",
+        "top_partner_share": 0.181
+      },
+      "Rape and Mustardseed": {
+        "tonnes": 11034291.2,
+        "kcal": 49964082012830.98,
+        "n_partners": 68,
+        "hhi": 0.1357,
+        "effective_partners": 7.37,
+        "top_partner": "CHN",
+        "top_partner_share": 0.2322
+      },
+      "Soyabeans": {
+        "tonnes": 4312484.7,
+        "kcal": 16369907703393.723,
+        "n_partners": 74,
+        "hhi": 0.0775,
+        "effective_partners": 12.91,
+        "top_partner": "IRN",
+        "top_partner_share": 0.1786
+      },
+      "Peas": {
+        "tonnes": 3806098.5,
+        "kcal": 12353272199249.496,
+        "n_partners": 94,
+        "hhi": 0.5099,
+        "effective_partners": 1.96,
+        "top_partner": "CHN",
+        "top_partner_share": 0.6996
+      },
+      "Pulses, Other and products": {
+        "tonnes": 3340148.5,
+        "kcal": 11213370222225.459,
+        "n_partners": 125,
+        "hhi": 0.1311,
+        "effective_partners": 7.63,
+        "top_partner": "IND",
+        "top_partner_share": 0.2909
+      },
+      "Rape and Mustard Oil": {
+        "tonnes": 3322703.4,
+        "kcal": 29871103736810.0,
+        "n_partners": 63,
+        "hhi": 0.3788,
+        "effective_partners": 2.64,
+        "top_partner": "USA",
+        "top_partner_share": 0.5184
+      },
+      "Potatoes and products": {
+        "tonnes": 2129224.8,
+        "kcal": 1393587215497.7773,
+        "n_partners": 35,
+        "hhi": 0.8981,
+        "effective_partners": 1.11,
+        "top_partner": "USA",
+        "top_partner_share": 0.9475
+      },
+      "Pigmeat": {
+        "tonnes": 1622764.0,
+        "kcal": 2677495058132.6943,
+        "n_partners": 82,
+        "hhi": 0.2618,
+        "effective_partners": 3.82,
+        "top_partner": "CHN",
+        "top_partner_share": 0.422
+      },
+      "Cereals, Other": {
+        "tonnes": 1178102.5,
+        "kcal": 4248200326038.7827,
+        "n_partners": 91,
+        "hhi": 0.1399,
+        "effective_partners": 7.15,
+        "top_partner": "MEX",
+        "top_partner_share": 0.3132
+      },
+      "Vegetables, other": {
+        "tonnes": 998239.8,
+        "kcal": 261299842418.30298,
+        "n_partners": 52,
+        "hhi": 0.9939,
+        "effective_partners": 1.01,
+        "top_partner": "USA",
+        "top_partner_share": 0.9969
+      },
+      "Maize and products": {
+        "tonnes": 960462.1,
+        "kcal": 2373608578564.1255,
+        "n_partners": 39,
+        "hhi": 0.272,
+        "effective_partners": 3.68,
+        "top_partner": "IRL",
+        "top_partner_share": 0.4444
+      },
+      "Milk - Excluding Butter": {
+        "tonnes": 894361.8,
+        "kcal": 499208864158.16724,
+        "n_partners": 84,
+        "hhi": 0.2289,
+        "effective_partners": 4.37,
+        "top_partner": "USA",
+        "top_partner_share": 0.4533
+      },
+      "Oats": {
+        "tonnes": 846625.4,
+        "kcal": 2313397676039.17,
+        "n_partners": 63,
+        "hhi": 0.2981,
+        "effective_partners": 3.36,
+        "top_partner": "USA",
+        "top_partner_share": 0.5048
+      },
+      "Bovine Meat": {
+        "tonnes": 508780.4,
+        "kcal": 686731234057.6969,
+        "n_partners": 52,
+        "hhi": 0.584,
+        "effective_partners": 1.71,
+        "top_partner": "USA",
+        "top_partner_share": 0.7551
+      },
+      "Oilcrops, Other": {
+        "tonnes": 507023.1,
+        "kcal": 3572484593496.0,
+        "n_partners": 75,
+        "hhi": 0.29,
+        "effective_partners": 3.45,
+        "top_partner": "CHN",
+        "top_partner_share": 0.3561
+      },
+      "Fruits, other": {
+        "tonnes": 462476.2,
+        "kcal": 262100313995.74832,
+        "n_partners": 88,
+        "hhi": 0.5133,
+        "effective_partners": 1.95,
+        "top_partner": "USA",
+        "top_partner_share": 0.7101
+      },
+      "Beans": {
+        "tonnes": 315173.1,
+        "kcal": 990082682107.0609,
+        "n_partners": 85,
+        "hhi": 0.1197,
+        "effective_partners": 8.35,
+        "top_partner": "GBR",
+        "top_partner_share": 0.2774
+      },
+      "Crustaceans": {
+        "tonnes": 268815.0,
+        "kcal": 102812552970.53844,
+        "n_partners": 63,
+        "hhi": 0.2907,
+        "effective_partners": 3.44,
+        "top_partner": "USA",
+        "top_partner_share": 0.4846
+      },
+      "Fats, Animals, Raw": {
+        "tonnes": 229483.9,
+        "kcal": 1917130592746.056,
+        "n_partners": 13,
+        "hhi": 0.8718,
+        "effective_partners": 1.15,
+        "top_partner": "USA",
+        "top_partner_share": 0.9328
+      },
+      "Sugar (Raw Equivalent)": {
+        "tonnes": 216367.6,
+        "kcal": 842264298705.6204,
+        "n_partners": 32,
+        "hhi": 0.6432,
+        "effective_partners": 1.55,
+        "top_partner": "USA",
+        "top_partner_share": 0.7928
+      },
+      "Cocoa Beans and products": {
+        "tonnes": 198549.7,
+        "kcal": 334430980900.546,
+        "n_partners": 21,
+        "hhi": 0.8684,
+        "effective_partners": 1.15,
+        "top_partner": "USA",
+        "top_partner_share": 0.9309
+      },
+      "Offals, Edible": {
+        "tonnes": 184013.0,
+        "kcal": 268627269911.0519,
+        "n_partners": 57,
+        "hhi": 0.2225,
+        "effective_partners": 4.49,
+        "top_partner": "CHN",
+        "top_partner_share": 0.3909
+      },
+      "Oilcrops Oil, Other": {
+        "tonnes": 183407.2,
+        "kcal": 1521600017592.1895,
+        "n_partners": 71,
+        "hhi": 0.4023,
+        "effective_partners": 2.49,
+        "top_partner": "USA",
+        "top_partner_share": 0.6094
+      },
+      "Demersal Fish": {
+        "tonnes": 174387.0,
+        "kcal": 82979811269.54309,
+        "n_partners": 65,
+        "hhi": 0.1485,
+        "effective_partners": 6.73,
+        "top_partner": "CHN",
+        "top_partner_share": 0.2601
+      },
+      "Poultry Meat": {
+        "tonnes": 162867.9,
+        "kcal": 221817298011.66913,
+        "n_partners": 54,
+        "hhi": 0.2453,
+        "effective_partners": 4.08,
+        "top_partner": "USA",
+        "top_partner_share": 0.4357
+      },
+      "Nuts and products": {
+        "tonnes": 160736.3,
+        "kcal": 135448675749.32288,
+        "n_partners": 32,
+        "hhi": 0.3091,
+        "effective_partners": 3.23,
+        "top_partner": "USA",
+        "top_partner_share": 0.5192
+      },
+      "Wine": {
+        "tonnes": 148185.3,
+        "kcal": 117261707959.03778,
+        "n_partners": 34,
+        "hhi": 0.9895,
+        "effective_partners": 1.01,
+        "top_partner": "USA",
+        "top_partner_share": 0.9947
+      },
+      "Oranges, Mandarines": {
+        "tonnes": 134715.3,
+        "kcal": 20142295052.17433,
+        "n_partners": 3,
+        "hhi": 0.8551,
+        "effective_partners": 1.17,
+        "top_partner": "FRA",
+        "top_partner_share": 0.9217
+      },
+      "Barley and products": {
+        "tonnes": 129248.1,
+        "kcal": 267918473551.80002,
+        "n_partners": 14,
+        "hhi": 0.4915,
+        "effective_partners": 2.03,
+        "top_partner": "MEX",
+        "top_partner_share": 0.6473
+      },
+      "Pelagic Fish": {
+        "tonnes": 119276.7,
+        "kcal": 114433416315.9907,
+        "n_partners": 71,
+        "hhi": 0.6369,
+        "effective_partners": 1.57,
+        "top_partner": "USA",
+        "top_partner_share": 0.7937
+      },
+      "Tomatoes and products": {
+        "tonnes": 112505.7,
+        "kcal": 22819120706.152214,
+        "n_partners": 9,
+        "hhi": 0.9781,
+        "effective_partners": 1.02,
+        "top_partner": "USA",
+        "top_partner_share": 0.9889
+      },
+      "Molluscs, Other": {
+        "tonnes": 84155.0,
+        "kcal": 17108315044.856956,
+        "n_partners": 39,
+        "hhi": 0.4414,
+        "effective_partners": 2.27,
+        "top_partner": "USA",
+        "top_partner_share": 0.6327
+      },
+      "Apples and products": {
+        "tonnes": 80767.1,
+        "kcal": 33628616630.226887,
+        "n_partners": 22,
+        "hhi": 0.3433,
+        "effective_partners": 2.91,
+        "top_partner": "USA",
+        "top_partner_share": 0.5187
+      },
+      "Coffee and products": {
+        "tonnes": 80251.7,
+        "kcal": 61274693668.74046,
+        "n_partners": 11,
+        "hhi": 0.9207,
+        "effective_partners": 1.09,
+        "top_partner": "USA",
+        "top_partner_share": 0.9593
+      },
+      "Freshwater Fish": {
+        "tonnes": 68886.3,
+        "kcal": 48463720095.96466,
+        "n_partners": 6,
+        "hhi": 0.4703,
+        "effective_partners": 2.13,
+        "top_partner": "DOM",
+        "top_partner_share": 0.6504
+      },
+      "Onions": {
+        "tonnes": 62663.3,
+        "kcal": 24498285154.19878,
+        "n_partners": 14,
+        "hhi": 0.9863,
+        "effective_partners": 1.01,
+        "top_partner": "USA",
+        "top_partner_share": 0.9931
+      },
+      "Tea (including mate)": {
+        "tonnes": 56187.2,
+        "kcal": 31830045967.5,
+        "n_partners": 10,
+        "hhi": 0.8926,
+        "effective_partners": 1.12,
+        "top_partner": "USA",
+        "top_partner_share": 0.9437
+      },
+      "Sunflower seed": {
+        "tonnes": 45214.6,
+        "kcal": 0.0,
+        "n_partners": 25,
+        "hhi": 0.9384,
+        "effective_partners": 1.07,
+        "top_partner": "USA",
+        "top_partner_share": 0.9686
+      },
+      "Sweet potatoes": {
+        "tonnes": 42645.9,
+        "kcal": 41816989751.47063,
+        "n_partners": 5,
+        "hhi": 0.6476,
+        "effective_partners": 1.54,
+        "top_partner": "NLD",
+        "top_partner_share": 0.7951
+      },
+      "Groundnuts": {
+        "tonnes": 42639.5,
+        "kcal": 141129909359.48254,
+        "n_partners": 4,
+        "hhi": 0.4686,
+        "effective_partners": 2.13,
+        "top_partner": "CHN",
+        "top_partner_share": 0.6154
+      }
+    },
+    "within": {
+      "Wheat and products": {
+        "tonnes": 2837456.6,
+        "kcal": 6863122148230.54,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Milk - Excluding Butter": {
+        "tonnes": 2628457.1,
+        "kcal": 1467134517749.5242,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Potatoes and products": {
+        "tonnes": 656574.7,
+        "kcal": 429731073979.36945,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Bovine Meat": {
+        "tonnes": 485387.8,
+        "kcal": 655156834475.9503,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Rape and Mustard Oil": {
+        "tonnes": 468581.2,
+        "kcal": 4212544718300.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Pigmeat": {
+        "tonnes": 214469.6,
+        "kcal": 353866244185.9901,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Oilcrops Oil  Other": {
+        "tonnes": 196735.6,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Maize and products": {
+        "tonnes": 168014.4,
+        "kcal": 415217302651.4114,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Cream": {
+        "tonnes": 131086.3,
+        "kcal": 330270066926.0949,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Onions": {
+        "tonnes": 123795.8,
+        "kcal": 48398133099.99343,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Poultry Meat": {
+        "tonnes": 87614.3,
+        "kcal": 119325963790.45715,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Butter  Ghee": {
+        "tonnes": 60216.3,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Fats  Animals  Raw": {
+        "tonnes": 59568.1,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Vegetables  other": {
+        "tonnes": 53668.9,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Molluscs  Other": {
+        "tonnes": 45626.9,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Rye and products": {
+        "tonnes": 44582.6,
+        "kcal": 113334904751.84085,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Peas": {
+        "tonnes": 42490.0,
+        "kcal": 137907916431.3698,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Pulses  Other and products": {
+        "tonnes": 41826.3,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Demersal Fish": {
+        "tonnes": 40083.1,
+        "kcal": 19073022526.870243,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Eggs": {
+        "tonnes": 39528.9,
+        "kcal": 50447609893.02932,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Apples and products": {
+        "tonnes": 27211.0,
+        "kcal": 11329711337.166151,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Crustaceans": {
+        "tonnes": 21515.8,
+        "kcal": 8229066666.896746,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Wine": {
+        "tonnes": 21040.9,
+        "kcal": 16650027783.504402,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Rape and Mustardseed": {
+        "tonnes": 16550.4,
+        "kcal": 74941401286.78453,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Pelagic Fish": {
+        "tonnes": 15873.9,
+        "kcal": 15229306471.477884,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Sugar (Raw Equivalent)": {
+        "tonnes": 15359.9,
+        "kcal": 59792113693.75266,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Beans": {
+        "tonnes": 14509.5,
+        "kcal": 45580180458.19368,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Barley and products": {
+        "tonnes": 14225.2,
+        "kcal": 29487352820.1,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Grapes and products (excl wine)": {
+        "tonnes": 14193.8,
+        "kcal": 9631692738.260065,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Soyabeans": {
+        "tonnes": 12255.5,
+        "kcal": 46520967412.749054,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Maize Germ Oil": {
+        "tonnes": 8561.7,
+        "kcal": 77382438829.28047,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Oats": {
+        "tonnes": 7525.7,
+        "kcal": 20564006247.01,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Mutton & Goat Meat": {
+        "tonnes": 7081.3,
+        "kcal": 15416110146.855001,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Soyabean Oil": {
+        "tonnes": 6856.1,
+        "kcal": 62687348498.3327,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Rice and products": {
+        "tonnes": 6850.8,
+        "kcal": 15890394191.702318,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Spices  Other": {
+        "tonnes": 5679.5,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Sunflowerseed Oil": {
+        "tonnes": 5524.1,
+        "kcal": 48432429216.54,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Aquatic Animals  Others": {
+        "tonnes": 4197.9,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Fruits  other": {
+        "tonnes": 3079.2,
+        "kcal": 0.0,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      },
+      "Tomatoes and products": {
+        "tonnes": 2403.0,
+        "kcal": 487397450.56148714,
+        "n_partners": 1,
+        "hhi": 1.0,
+        "effective_partners": 1.0,
+        "top_partner": "CAN",
+        "top_partner_share": 1.0
+      }
+    }
+  },
+  "edge_coverage": {
+    "import": {
+      "canada": {
+        "edges": 22715,
+        "coverage": {
+          "80%": 8165,
+          "90%": 10814,
+          "95%": 13118,
+          "99%": 16972
+        }
+      },
+      "maritime_port": {
+        "edges": 3537,
+        "coverage": {
+          "80%": 402,
+          "90%": 619,
+          "95%": 915,
+          "99%": 1633
+        }
+      },
+      "SHIPPABLE_canada_plus_maritime": {
+        "edges": 26252,
+        "coverage": {
+          "80%": 8464,
+          "90%": 11336,
+          "95%": 13784,
+          "99%": 18043
+        }
+      }
+    },
+    "export": {
+      "canada": {
+        "edges": 23366,
+        "coverage": {
+          "80%": 4001,
+          "90%": 6139,
+          "95%": 7858,
+          "99%": 13035
+        }
+      },
+      "maritime_port": {
+        "edges": 4182,
+        "coverage": {
+          "80%": 208,
+          "90%": 379,
+          "95%": 644,
+          "99%": 1424
+        }
+      },
+      "SHIPPABLE_canada_plus_maritime": {
+        "edges": 27548,
+        "coverage": {
+          "80%": 4183,
+          "90%": 6426,
+          "95%": 8309,
+          "99%": 14129
+        }
+      }
+    },
+    "within": {
+      "canada": {
+        "edges": 16398,
+        "coverage": {
+          "80%": 2759,
+          "90%": 3758,
+          "95%": 5077,
+          "99%": 8618
+        }
+      },
+      "SHIPPABLE_canada_plus_maritime": {
+        "edges": 16398,
+        "coverage": {
+          "80%": 2759,
+          "90%": 3758,
+          "95%": 5077,
+          "99%": 8618
+        }
+      }
+    }
+  },
+  "foreign_edges_dropped_from_shippable": 24537750
+}

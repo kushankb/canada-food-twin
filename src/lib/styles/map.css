@@ -1,0 +1,853 @@
+/* ============================================================
+   Canada Food Twin — Map Stylesheet
+   Copied from globalfoodsupply (FoodTransportInfrastructure/src/lib/styles/map.css) so the two
+   apps share their chrome: map container, control panel, legends, popups, loading overlay.
+   Canada-specific additions are at the end of the file.
+   ============================================================ */
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+  --bg-base:        #080c16;
+  --bg-panel:       rgba(13, 17, 32, 0.92);
+  --bg-panel-hover: #161c2e;
+  --border:         #1e2640;
+  --text-primary:   #e8edf4;
+  --text-secondary: #7a8fa6;
+  --text-muted:     #3d5066;
+  --accent-blue:    #4a90d9;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms ease;
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+/* ── Full-page map layout ───────────────────────────────────── */
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 110%;  /* 10% larger base — scales all rem-based sizes */
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* ── Map container ──────────────────────────────────────────── */
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Mapbox attribution ─────────────────────────────────────── */
+.mapboxgl-ctrl-attrib { background: rgba(10,14,20,0.7) !important; }
+.mapboxgl-ctrl-attrib a { color: var(--text-muted) !important; }
+.mapboxgl-ctrl-logo { opacity: 0.4 !important; }
+
+/* ── Control Panel ──────────────────────────────────────────── */
+.control-panel {
+  position: absolute;
+  top: 20px; left: 20px;
+  z-index: 10;
+  width: 270px;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+/* Thin scrollbar for control panel */
+.control-panel::-webkit-scrollbar { width: 4px; }
+.control-panel::-webkit-scrollbar-track { background: transparent; }
+.control-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.panel-section-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* ── Layer toggle buttons ───────────────────────────────────── */
+.layer-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  text-align: left;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.layer-btn:hover {
+  background: var(--bg-panel-hover);
+  color: var(--text-primary);
+}
+
+.layer-btn.active {
+  color: var(--text-primary);
+  border-color: var(--btn-color, var(--accent-blue));
+  background: color-mix(in srgb, var(--btn-color, var(--accent-blue)) 10%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--btn-color, var(--accent-blue)) 30%, transparent);
+}
+
+.layer-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--btn-color, var(--accent-blue));
+  opacity: 0.5;
+  transition: opacity var(--transition), box-shadow var(--transition);
+}
+
+.layer-btn.active .layer-dot {
+  opacity: 1;
+  box-shadow: 0 0 6px 2px color-mix(in srgb, var(--btn-color) 60%, transparent);
+}
+
+.layer-btn-text { flex: 1; line-height: 1.25; }
+.layer-btn-label { display: block; font-size: 0.8rem; font-weight: 500; }
+.layer-btn-unit  { display: block; font-size: 0.67rem; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Layer button wrapper + hover tooltip ──────────────────── */
+.layer-btn-wrapper {
+  position: relative;
+}
+
+.layer-tooltip {
+  position: fixed;
+  width: 280px;
+  padding: 10px 12px;
+  background: rgba(10, 14, 20, 0.97);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  pointer-events: none;
+  z-index: 9999;
+  animation: tooltipFadeIn 120ms ease-out;
+}
+
+.layer-tooltip .tooltip-source {
+  display: block;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateX(4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Percentile selector ──────────────────────────────────── */
+.percentile-selector {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.pctl-btn {
+  flex: 1;
+  padding: 5px 0;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.pctl-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-panel-hover);
+}
+
+.pctl-btn.active {
+  color: var(--text-primary);
+  border-color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
+}
+
+.pctl-hint {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+/* ── Opacity slider (appears under active layer buttons) ────── */
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px 0 34px;
+  font-size: 11px;
+  color: #6f7886;
+}
+
+.opacity-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 12px 8px 34px;
+}
+
+.opacity-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--slider-color, var(--accent-blue));
+  border: 2px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+  transition: transform 150ms ease;
+}
+
+.opacity-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.opacity-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--slider-color, var(--accent-blue));
+  border: 2px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+
+.opacity-value {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Divider ────────────────────────────────────────────────── */
+.panel-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+/* ── Legend stack (bottom-right, raster gradient) ───────────── */
+.legend-stack {
+  position: absolute;
+  bottom: 36px; right: 20px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Legend (gradient — heatmap layers) ─────────────────────── */
+.legend {
+  position: relative;
+  min-width: 220px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  transition: opacity var(--transition);
+}
+
+.legend-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+
+.legend-gradient {
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* ── Legend (categorical — food groups) ─────────────────────── */
+.legend-categorical {
+  min-width: 170px;
+}
+
+.legend-swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+.legend-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-swatch-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Tooltip (popup) ───────────────────────────────────────── */
+.mapboxgl-popup-content {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 14px !important;
+  color: var(--text-primary) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.78rem !important;
+  box-shadow: var(--shadow) !important;
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.mapboxgl-popup-tip { display: none !important; }
+
+.popup-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.popup-swatch {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 3px;
+}
+
+.popup-key   { color: var(--text-secondary); }
+.popup-value { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+.popup-range { font-size: 0.67rem; color: var(--text-muted); margin-top: 4px; }
+
+.popup-desc {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* ── Panel header (title + info button) ─────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.panel-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.info-btn {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+  margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.info-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
+}
+
+/* ── Loading overlay ────────────────────────────────────────── */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transition: opacity 0.5s ease;
+}
+
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.loading-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ── Breadbasket method selector ──────────────────────────── */
+.method-selector {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.method-btn {
+  flex: 1;
+  padding: 5px 0;
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.method-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-panel-hover);
+}
+
+.method-btn.active {
+  color: var(--text-primary);
+  border-color: #e6a532;
+  background: color-mix(in srgb, #e6a532 12%, transparent);
+}
+
+.method-hint {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* ── Info Panel (About this map) ──────────────────────────── */
+.info-panel {
+  position: absolute;
+  top: 20px; right: 60px;
+  z-index: 10;
+  max-width: 260px;
+}
+
+.info-toggle {
+  padding: 6px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all var(--transition);
+}
+
+.info-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.info-content {
+  margin-top: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+.info-content::-webkit-scrollbar { width: 4px; }
+.info-content::-webkit-scrollbar-track { background: transparent; }
+.info-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.info-section-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.findings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.finding-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.finding-icon { font-size: 1rem; }
+.finding-stat { font-size: 0.72rem; font-weight: 600; color: var(--text-primary); }
+.finding-text { font-size: 0.62rem; color: var(--text-secondary); line-height: 1.4; }
+
+.burdens-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.burden-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.02);
+  border-radius: var(--radius-sm);
+}
+
+.bi-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+.bi-text { flex: 1; }
+.bi-name { font-size: 0.7rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.bi-detail { font-size: 0.62rem; color: var(--text-secondary); line-height: 1.4; }
+.bi-threshold { font-size: 0.58rem; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+
+.info-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-source-row {
+  display: flex;
+  gap: 8px;
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.info-source-label {
+  color: var(--text-muted);
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.info-source-value { color: var(--text-secondary); }
+
+.info-cite {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.info-cite-link {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.info-cite-link:hover { text-decoration: underline; }
+
+.info-built-by {
+  margin-top: 8px;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+/* ── Interactive legend swatches ──────────────────────────── */
+.legend-swatch-row.clickable {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: opacity var(--transition), background var(--transition);
+}
+
+.legend-swatch-row.clickable:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.legend-swatch-row.dimmed {
+  opacity: 0.3;
+}
+
+.legend-swatch-row.selected {
+  background: rgba(255,255,255,0.08);
+}
+
+.legend-hint {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 6px;
+  transition: opacity var(--transition);
+}
+
+.legend-hint.pulse {
+  animation: hintPulse 2s ease-in-out infinite;
+}
+
+.legend-hint.faded {
+  opacity: 0.5;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   Canada Food Twin additions — direction axis, headline, chips
+   ════════════════════════════════════════════════════════════ */
+
+:root { --dir: #4A9EFF; }
+
+.panel-subtitle {
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 2px 0 12px;
+}
+
+/* Direction toggle — the app's primary axis */
+.dir-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.95fr;
+  gap: 3px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+.dir-btn {
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 6px 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.dir-btn:hover { color: var(--text-primary); background: var(--bg-panel-hover); }
+.dir-btn.active { color: #080c16; background: var(--btn-color); }
+.dir-btn.minor { font-weight: 500; }
+
+/* One-sentence answer under the toggle */
+.headline {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.headline strong { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+.headline .accent { color: var(--dir); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Mode chips under the routes layer */
+.mode-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 12px 8px 34px;
+}
+.mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: 0.64rem;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: opacity var(--transition), border-color var(--transition), color var(--transition);
+}
+.mode-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--chip-color); }
+.mode-chip:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.mode-chip.off { opacity: 0.38; }
+
+/* Legend: food-group subtitle and the route-width scale */
+.legend-sub {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin: -4px 0 8px;
+}
+.width-scale {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  align-items: end;
+  margin-top: 4px;
+}
+.width-sample { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+.width-sample .line { border-radius: 2px; background: #d8dde6; }
+.width-sample .lbl { font-size: 0.58rem; color: var(--text-muted); text-align: center; font-variant-numeric: tabular-nums; }
+.legend-divider { border: none; border-top: 1px solid var(--border); margin: 9px 0 7px; }
+
+/* Selection trace banner */
+.trace-banner {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  background: rgba(14, 18, 28, 0.92);
+  border: 1px solid color-mix(in srgb, var(--dir) 45%, transparent);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.7rem;
+  color: #c8cdd6;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.trace-banner strong { color: #fff; }
+
+/* Error / token notices */
+.map-notice {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.map-notice-card {
+  pointer-events: auto;
+  max-width: 460px;
+  background: rgba(14, 18, 28, 0.97);
+  border: 1px solid rgba(238, 102, 119, 0.45);
+  border-radius: 10px;
+  padding: 18px 20px;
+  font-size: 0.78rem;
+  color: #c8cdd6;
+  line-height: 1.55;
+}
+.map-notice-card h2 { font-size: 0.9rem; color: #EE6677; margin: 0 0 6px; }
+.map-notice-card code { color: #fff; font-size: 0.72rem; }
+
+.info-content { position: relative; z-index: 12; }
+.info-desc { font-size: 0.68rem; line-height: 1.55; color: var(--text-secondary); margin: 0 0 12px; }
+.info-caveats { margin: 0 0 12px; padding-left: 16px; }
+.info-caveats li { font-size: 0.64rem; line-height: 1.5; color: var(--text-secondary); margin-bottom: 5px; }
+
+/* Canada layout: the right column holds the persistent side panel, so the legend stack sits
+   bottom-left beside the control panel instead of bottom-right as in globalfoodsupply. */
+.legend-stack { right: auto; left: 306px; bottom: 28px; }
+
+/* One wide, short legend card (see Legend.svelte) */
+.legend-wide {
+  min-width: 0;
+  width: 560px;
+  max-width: calc(100vw - 306px - 400px);
+  padding: 10px 14px 8px;
+}
+.legend-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.legend-head .legend-title { margin-bottom: 0; }
+.legend-head .legend-sub { margin: 0; }
+.legend-swatches.four { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 2px 10px; }
+.legend-wide .legend-swatch-label { overflow: hidden; text-overflow: ellipsis; }
+.legend-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.legend-title.small { font-size: 0.62rem; margin-bottom: 5px; }

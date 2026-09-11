@@ -1,37 +1,50 @@
 """
 build_app_data_v2.py — Canada food twin, directional + food-group app payload.
 
-Turns the Canada extraction into the app's shipped payload. Three decisions worth knowing
-before changing anything here:
+Turns the Canada extraction into the app's shipped payload (static/data/). Decisions worth
+knowing before changing anything here:
 
-  1. FULL network. No calorie threshold: every Canada-linked edge ships. The payload stays
-     small because edges move from JSON to a packed binary (`edges.bin`), ~37 bytes/edge
-     instead of ~290. See PACK LAYOUT below.
-  2. FOOD GROUPS. `data/food_groups.csv` maps all 82 FBS commodities onto 12 groups, and
-     every aggregate -- partners, provinces, edges -- is cut by group as well as in total.
+  1. FULL network. No calorie threshold: every Canada-linked edge ships, packed into a
+     binary (`edges.bin`, ~41 bytes/edge) rather than JSON. See PACK LAYOUT in pack_edges().
+  2. FOOD GROUPS. `data/food_groups.csv` maps all 82 FBS commodities onto 12 groups; every
+     aggregate is cut by group as well as in total.
   3. NAME NORMALISATION. The source writes some commodities two ways ("Aquatic Animals,
-     Others" and "Aquatic Animals  Others"). Left alone, one commodity becomes two and its
-     concentration metrics are wrong. `norm_commodity` folds them back together.
+     Others" / "Aquatic Animals  Others"). `norm_commodity` folds them back together.
+  4. CONNECTORS. Edges with an admin-region centroid at one end (CAN.8_1-road2201886_CAN,
+     port1132-PER.17_1) are tagged scope=connector. Their tonnage is real but their geometry
+     is a straight line to a centroid, not a route, so the map hides them.
+  5. ROUTE MIX, NOT MODE MIX. Land/sea and direct/re-export shares come from the O-D table's
+     flow_type, i.e. one count per journey. Summing edge tonnage by mode would count a truck
+     trip once per road segment (hundreds) and a sea leg a handful of times.
+  6. PARTNERS PER EDGE. When the per-edge parts carry a `partner` column (extraction run with
+     the partner-keyed accumulator, tag allp), each edge gets its partner mix and each partner
+     gets its own edge list (pe/<direction>/<partner>.bin), fetched when a country is
+     selected. Without that column the app still works; it just cannot trace a partner's
+     routes.
 
 Inputs (data/):
-    canada_od_<tag>.csv              origin->destination trade, per commodity
-    canada_edges_<tag>.csv           per-edge throughput
-    _parts_<tag>/edges_*.parquet     per-edge, per-commodity detail
-    canada_edge_geometry_<tag>.csv   edge_id -> endpoints
-    food_groups.csv                  commodity -> food group
+    canada_od_<tag>.csv                 origin->destination trade, per commodity
+    canada_edges_<tag>.csv              per-edge throughput
+    _parts_<parts-tag>/edges_*.parquet  per-edge, per-commodity (and per-partner) detail
+    canada_edge_geometry_<tag>.csv      edge_id -> endpoints
+    food_groups.csv                     commodity -> food group
+    --places-src district_stats.json    country/province names and label points
 
-Outputs (public/data/):
-    meta.json          coverage, units, caveats, headline totals by direction and group
-    partners.json      partner concentration: overall, by food group, by commodity
-    commodities.json   per-commodity dependence, tagged with its food group
-    foodgroups.json    per-group concentration, partners, provinces, transport mix
-    provinces.json     per-province trade, by group, with partners and commodities
-    edges.bin          packed edge geometry + quantities + food-group mix
-    edges_meta.json    the key to edges.bin: offsets, dtypes, code tables
-    ec/<shard>.json    edge index -> commodities carried, sharded 256 ways and fetched
-                       on demand: the map never needs it, only the detail panel does
+Outputs (static/data/):
+    meta.json            coverage, units, caveats, headline totals by direction
+    partners.json        partner concentration: overall, by food group, by commodity
+    commodities.json     per-commodity dependence, tagged with its food group
+    foodgroups.json      per-group concentration, partners, provinces, route mix
+    provinces.json       per-province trade, by group, with partners and commodities
+    choropleth.json      tonnage by partner country and by province, per direction and group
+    partner_detail.json  per partner: groups, commodities, provinces, route mix, dependence
+    places.json          names and label points for search and panels
+    edges.bin            packed edge geometry + quantities + food-group mix
+    edges_meta.json      the key to edges.bin: offsets, dtypes, code tables
+    ec/<shard>.json      edge index -> commodities and partners carried, sharded 256 ways
+    pe/<dir>/<code>.bin  partner -> every edge its trade uses (uint32 index, float32 tonnes)
 
-Run: python3 scripts/build_app_data_v2.py --tag all
+Run: python3 scripts/build_app_data_v2.py --tag all [--parts-tag allp]
 """
 
 import argparse
@@ -39,13 +52,17 @@ import glob
 import json
 import os
 import re
+import shutil
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(BASE, "data")
-OUT = os.path.join(BASE, "public", "data")
+OUT = os.path.join(BASE, "static", "data")
+DEFAULT_PLACES = os.path.expanduser(
+    "~/Desktop/FoodTransportInfrastructure/static/district_stats.json")
 
 DIRECTIONS = ("import", "export", "within")
 
@@ -68,15 +85,26 @@ FOOD_GROUPS = [
     "Other",
 ]
 MODES = ["road", "rail", "maritime", "port", "other"]
-SCOPES = ["canada", "maritime_port", "other"]
-
-# Shard count for the per-edge commodity detail. 256 keeps each file ~55 KB.
+# Wire format for edges.bin `scope`. Append only: existing codes must keep their index.
+SCOPES = ["canada", "maritime_port", "other", "connector"]
+# The source's four international route datasets. Domestic ("within") has its own.
+ROUTE_TYPES = ["land_dom", "land_re", "sea_dom", "sea_re"]
+# Shard count for the per-edge detail. 256 keeps each file ~55 KB.
 EC_SHARDS = 256
+# An endpoint like CAN.8_1 or PER.17_1 is an admin-region centroid, not a network node.
+ADMIN_ENDPOINT = r"(?:^|-)[A-Z]{3}\.\d+_\d+(?:-|$)"
 
 
 def norm_commodity(s):
     """Fold the source's double-space variants back onto their comma spelling."""
     return re.sub(r"\s{2,}", ", ", str(s)).strip()
+
+
+def norm_partner(code):
+    """A few territories arrive as dotless admin codes (ABW_1_1, MLT_1_1); their country is
+    the first three letters. Canadian province codes (CAN.9_1) are left alone."""
+    code = str(code)
+    return code[:3] if re.fullmatch(r"[A-Z]{3}_\d+_\d+", code) else code
 
 
 def hhi(v):
@@ -121,11 +149,28 @@ def share_list(series, top_n=12, key="k"):
             for k, v in s.head(top_n).items()]
 
 
-def load_inputs(tag):
+def route_mix(df):
+    """Share of tonnage by route type — land vs sea, direct vs re-export — one count per
+    journey. None for domestic flows, which have no international route type."""
+    s = df.groupby("flow_type").tonnes.sum().reindex(ROUTE_TYPES).fillna(0.0)
+    tot = float(s.sum())
+    if tot <= 0:
+        return None
+    return {k: round(float(v) / tot, 4) for k, v in s.items()}
+
+
+def round_map(series):
+    s = series[series > 0]
+    return {str(k): round(float(v), 1) for k, v in s.items()}
+
+
+def load_inputs(tag, parts_tag):
     xw = pd.read_csv(os.path.join(DATA, "food_groups.csv"))
     fg_of = dict(zip(xw.commodity, xw.food_group))
 
     od = pd.read_csv(os.path.join(DATA, f"canada_od_{tag}.csv"))
+    for c in ("from_iso3", "to_iso3"):
+        od[c] = od[c].map(norm_partner)
     od["commodity"] = od.commodity.map(norm_commodity)
     od["food_group"] = od.commodity.map(fg_of).fillna("Other")
     # The Canadian end of the journey: where the food lands, or where it left from.
@@ -133,19 +178,37 @@ def load_inputs(tag):
     od["partner"] = np.where(od.direction == "import", od.from_iso3, od.to_iso3)
 
     edges = pd.read_csv(os.path.join(DATA, f"canada_edges_{tag}.csv"))
+    is_conn = edges.edge_id.str.contains(ADMIN_ENDPOINT, regex=True)
+    edges.loc[is_conn, "scope"] = "connector"
+
     geo_path = os.path.join(DATA, f"canada_edge_geometry_{tag}.csv")
     geo = pd.read_csv(geo_path) if os.path.exists(geo_path) else pd.DataFrame()
 
-    parts = sorted(glob.glob(os.path.join(DATA, f"_parts_{tag}", "edges_[0-9]*.parquet")))
-    ec = (pd.concat([pd.read_parquet(p) for p in parts], ignore_index=True)
-          if parts else pd.DataFrame())
+    parts = sorted(glob.glob(os.path.join(DATA, f"_parts_{parts_tag}", "edges_[0-9]*.parquet")))
+    frames, pframes = [], []
+    for p in parts:
+        df = pd.read_parquet(p)
+        # Per-partner detail multiplies rows by the number of partners on each edge. Fold it
+        # out file by file (each file is one commodity) so memory stays flat.
+        if "partner" in df.columns:
+            pframes.append(df.groupby(["edge_id", "direction", "partner"],
+                                      as_index=False).tonnes.sum())
+            df = df.groupby(["edge_id", "direction", "commodity", "scope", "mode"],
+                            as_index=False).tonnes.sum()
+        frames.append(df)
+    ec = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    ep = pd.concat(pframes, ignore_index=True) if pframes else pd.DataFrame()
+    if not ep.empty:
+        ep["partner"] = ep.partner.map(norm_partner)
+        ep = ep.groupby(["edge_id", "direction", "partner"], as_index=False).tonnes.sum()
     if not ec.empty:
         ec["commodity"] = ec.commodity.map(norm_commodity)
         ec["food_group"] = ec.commodity.map(fg_of).fillna("Other")
 
-    print(f"O-D {len(od):,} rows | edges {len(edges):,} | geometry {len(geo):,} | "
-          f"per-commodity {len(ec):,} from {len(parts)} parts")
-    return od, edges, geo, ec, fg_of
+    print(f"O-D {len(od):,} rows | edges {len(edges):,} ({int(is_conn.sum())} connectors) | "
+          f"geometry {len(geo):,} | per-commodity {len(ec):,} | per-partner {len(ep):,} "
+          f"from {len(parts)} parts ({parts_tag})")
+    return od, edges, geo, ec, ep
 
 
 def energy_per_tonne(od):
@@ -211,14 +274,8 @@ def build_commodities(partners):
     return commodities
 
 
-def build_foodgroups(od, partners, ec):
-    """Per-group totals, concentration, province mix and transport mix."""
-    mode_by_group = {}
-    if not ec.empty and "mode" in ec.columns:
-        mode_by_group = {
-            (d, g): gg.groupby("mode").tonnes.sum()
-            for (d, g), gg in ec.groupby(["direction", "food_group"])
-        }
+def build_foodgroups(od, partners):
+    """Per-group totals, concentration, province mix and route mix."""
     out = {}
     for d in DIRECTIONS:
         sub = od[od.direction == d]
@@ -228,7 +285,7 @@ def build_foodgroups(od, partners, ec):
         tot_k = float(np.nansum(sub.kcal)) or 1.0
         rows = []
         for g, gg in sub.groupby("food_group"):
-            b = (partners.get(d, {}).get("by_food_group", {}) or {}).get(g)
+            b = (partners.get(d, {}).get("by_food_group", {}) or {}).get(g) or {}
             k = float(np.nansum(gg.kcal))
             rows.append({
                 "food_group": g,
@@ -237,16 +294,16 @@ def build_foodgroups(od, partners, ec):
                 "tonne_share": round(float(gg.tonnes.sum()) / tot_t, 4),
                 "calorie_share": round(k / tot_k, 4),
                 "n_commodities": int(gg.commodity.nunique()),
-                "n_partners": (b or {}).get("n_partners"),
-                "hhi": (b or {}).get("hhi"),
-                "effective_partners": (b or {}).get("effective_partners"),
-                "top_partner": ((b or {}).get("top1") or {}).get("iso3"),
-                "top_partner_share": ((b or {}).get("top1") or {}).get("share"),
-                "partners_for_90pct": (b or {}).get("partners_for_90pct"),
-                "top_partners": (b or {}).get("top_partners", [])[:10],
+                "n_partners": b.get("n_partners"),
+                "hhi": b.get("hhi"),
+                "effective_partners": b.get("effective_partners"),
+                "top_partner": (b.get("top1") or {}).get("iso3"),
+                "top_partner_share": (b.get("top1") or {}).get("share"),
+                "partners_for_90pct": b.get("partners_for_90pct"),
+                "top_partners": b.get("top_partners", [])[:10],
                 "provinces": share_list(gg.groupby("ca_admin").tonnes.sum(), 13, key="admin"),
                 "commodities": share_list(gg.groupby("commodity").tonnes.sum(), 10, key="commodity"),
-                "modes": share_list(mode_by_group.get((d, g), pd.Series(dtype=float)), 6, key="mode"),
+                "routes": route_mix(gg),
             })
         rows.sort(key=lambda r: -(r["kcal"] or 0))
         for r in rows:
@@ -268,24 +325,103 @@ def build_provinces(od):
             if admin not in PROVINCES:
                 continue
             name, code = PROVINCES[admin]
-            conc = concentration(gg.groupby("partner").tonnes.sum(), top_n=10)
+            conc = concentration(gg.groupby("partner").tonnes.sum(), top_n=10) or {}
             rows.append({
                 "admin": admin, "name": name, "code": code,
                 "tonnes": round(float(gg.tonnes.sum()), 1),
                 "kcal": float(np.nansum(gg.kcal)),
                 "share_of_national": round(float(gg.tonnes.sum()) / tot_t, 4),
-                "n_partners": (conc or {}).get("n_partners"),
-                "hhi": (conc or {}).get("hhi"),
-                "effective_partners": (conc or {}).get("effective_partners"),
-                "top_partner": ((conc or {}).get("top1") or {}).get("iso3"),
-                "top_partner_share": ((conc or {}).get("top1") or {}).get("share"),
-                "top_partners": (conc or {}).get("top_partners", []),
+                "n_partners": conc.get("n_partners"),
+                "hhi": conc.get("hhi"),
+                "effective_partners": conc.get("effective_partners"),
+                "top_partner": (conc.get("top1") or {}).get("iso3"),
+                "top_partner_share": (conc.get("top1") or {}).get("share"),
+                "top_partners": conc.get("top_partners", []),
                 "food_groups": share_list(gg.groupby("food_group").tonnes.sum(), 12, key="food_group"),
                 "commodities": share_list(gg.groupby("commodity").tonnes.sum(), 10, key="commodity"),
+                "routes": route_mix(gg),
             })
         rows.sort(key=lambda r: -r["tonnes"])
         out[d] = rows
     return out
+
+
+def build_choropleth(od):
+    """Tonnage by partner country and by province, per direction, overall and per group."""
+    out = {"partners": {}, "provinces": {}}
+    for d in DIRECTIONS:
+        sub = od[od.direction == d]
+        if sub.empty:
+            continue
+        for key, col in (("partners", "partner"), ("provinces", "ca_admin")):
+            if key == "partners" and d == "within":
+                continue  # every domestic partner is Canada itself
+            block = {"ALL": round_map(sub.groupby(col).tonnes.sum())}
+            for g, gg in sub.groupby("food_group"):
+                block[g] = round_map(gg.groupby(col).tonnes.sum())
+            out[key][d] = block
+    return out
+
+
+def build_partner_detail(od):
+    """Everything the country panel shows for one partner, per direction."""
+    out = {}
+    for d in ("import", "export"):
+        sub = od[od.direction == d]
+        if sub.empty:
+            continue
+        tot = float(sub.tonnes.sum()) or 1.0
+        group_tot = sub.groupby("food_group").tonnes.sum()
+        order = sub.groupby("partner").tonnes.sum().sort_values(ascending=False)
+        rank = {k: i + 1 for i, k in enumerate(order.index)}
+        block = {}
+        for iso, gg in sub.groupby("partner"):
+            t = float(gg.tonnes.sum())
+            by_g = gg.groupby("food_group").tonnes.sum()
+            dep = (by_g / group_tot.reindex(by_g.index)).sort_values(ascending=False)
+            block[str(iso)] = {
+                "rank": rank[iso], "of": int(len(order)),
+                "tonnes": round(t, 1),
+                "kcal": float(np.nansum(gg.kcal)),
+                "share": round(t / tot, 4),
+                "food_groups": share_list(by_g, 12, key="food_group"),
+                "commodities": share_list(gg.groupby("commodity").tonnes.sum(), 8, key="commodity"),
+                "provinces": share_list(gg.groupby("ca_admin").tonnes.sum(), 13, key="admin"),
+                "routes": route_mix(gg),
+                # This partner's share of Canada's national tonnage in each group — the
+                # dependence reading, as opposed to food_groups, which is its own mix.
+                "dependence": [{"food_group": str(k), "share": round(float(v), 4)}
+                               for k, v in dep.items() if v >= 0.005],
+            }
+        out[d] = block
+    return out
+
+
+def build_places(src, od):
+    """Names and label points for every partner country and Canadian province."""
+    wanted = set(od.from_iso3.dropna()) | set(od.to_iso3.dropna())
+    countries, provinces = {}, {}
+    if src and os.path.exists(src):
+        with open(src) as f:
+            d = json.load(f)
+        for iso, c in (d.get("countries") or {}).items():
+            if iso in wanted:
+                countries[iso] = {"name": c.get("name") or iso,
+                                  "lat": c.get("lat"), "lon": c.get("lon")}
+        for adm, c in (d.get("districts") or {}).items():
+            if adm in PROVINCES:
+                provinces[adm] = {"name": PROVINCES[adm][0], "code": PROVINCES[adm][1],
+                                  "lat": c.get("lat"), "lon": c.get("lon")}
+    else:
+        print(f"WARNING: {src} not found — places.json will carry codes, not names")
+    missing = sorted(wanted - set(countries))
+    for iso in missing:
+        countries[iso] = {"name": iso, "lat": None, "lon": None}
+    for adm, (name, code) in PROVINCES.items():
+        provinces.setdefault(adm, {"name": name, "code": code, "lat": None, "lon": None})
+    if missing:
+        print(f"places: {len(missing)} partner codes have no name/label point: {missing[:12]}")
+    return {"countries": countries, "provinces": provinces}
 
 
 def pack_edges(edges, geo, ec, kcal_per_t):
@@ -304,8 +440,6 @@ def pack_edges(edges, geo, ec, kcal_per_t):
     this file is a map layer.
     """
     e = edges.copy()
-    e["commodity"] = None  # edges table is already commodity-aggregated
-
     if not ec.empty:
         ec = ec.copy()
         ec["kcal"] = [t * kcal_per_t.get((c, d), np.nan)
@@ -313,7 +447,6 @@ def pack_edges(edges, geo, ec, kcal_per_t):
         agg = ec.groupby(["edge_id", "direction"], as_index=False).agg(kcal=("kcal", "sum"))
         e = e.drop(columns=[c for c in ("kcal",) if c in e.columns])
         e = e.merge(agg, on=["edge_id", "direction"], how="left")
-
     if not geo.empty:
         e = e.merge(geo, on="edge_id", how="left")
 
@@ -321,7 +454,6 @@ def pack_edges(edges, geo, ec, kcal_per_t):
     e = e[e.lon_a.notna() & e.lon_b.notna()].reset_index(drop=True)
     dropped = before - len(e)
 
-    # food-group mix per (edge, direction), as shares of that edge's tonnage
     fg = np.zeros((len(e), len(FOOD_GROUPS)), dtype=np.uint8)
     topc = np.zeros(len(e), dtype=np.uint16)
     commodity_codes = []
@@ -336,10 +468,10 @@ def pack_edges(edges, geo, ec, kcal_per_t):
                 acc[i, gidx.get(r.food_group, len(FOOD_GROUPS) - 1)] += r.tonnes
         tot = acc.sum(axis=1, keepdims=True)
         with np.errstate(invalid="ignore", divide="ignore"):
-            fg = np.nan_to_num(acc / np.where(tot > 0, tot, np.nan) * 255).astype(np.uint8)
+            fg = np.nan_to_num(acc / np.where(tot > 0, tot, np.nan) * 255).round().astype(np.uint8)
 
-        top = (ec.sort_values("tonnes", ascending=False)
-                 .drop_duplicates(["edge_id", "direction"]))
+        ecc = ec.groupby(["edge_id", "direction", "commodity"], as_index=False).tonnes.sum()
+        top = ecc.sort_values("tonnes", ascending=False).drop_duplicates(["edge_id", "direction"])
         commodity_codes = sorted(ec.commodity.unique())
         cidx = {c: i for i, c in enumerate(commodity_codes)}
         for r in top.itertuples(index=False):
@@ -349,7 +481,7 @@ def pack_edges(edges, geo, ec, kcal_per_t):
 
     dir_c = e.direction.map({d: i for i, d in enumerate(DIRECTIONS)}).fillna(0).astype(np.uint8)
     mode_c = e["mode"].map({m: i for i, m in enumerate(MODES)}).fillna(len(MODES) - 1).astype(np.uint8)
-    scope_c = e.scope.map({s: i for i, s in enumerate(SCOPES)}).fillna(len(SCOPES) - 1).astype(np.uint8)
+    scope_c = e.scope.map({s: i for i, s in enumerate(SCOPES)}).fillna(SCOPES.index("other")).astype(np.uint8)
 
     coords = np.stack([e.lon_a, e.lat_a, e.lon_b, e.lat_b], axis=1).astype(np.float32)
     tonnes = e.tonnes.to_numpy(dtype=np.float32)
@@ -381,73 +513,127 @@ def pack_edges(edges, geo, ec, kcal_per_t):
     return buf, meta, e
 
 
+def ranked(df, key, n):
+    """Top-n rows per (edge, direction) as shares of that edge's FULL tonnage — not of the
+    top-n subtotal, which would overstate every share."""
+    df = df.sort_values(["edge_id", "direction", "tonnes"], ascending=[True, True, False]).copy()
+    grp = df.groupby(["edge_id", "direction"], sort=False)
+    df["tot"] = grp.tonnes.transform("sum")
+    df["r"] = grp.cumcount()
+    df = df[df.r < n]
+    out = defaultdict(list)
+    for eid, d, k, t, tot in zip(df.edge_id, df.direction, df[key], df.tonnes, df.tot):
+        out[(eid, d)].append({"k": str(k), "s": round(float(t / tot), 3) if tot > 0 else 0.0})
+    return out
+
+
+def write_edge_detail(ec, ep, pos):
+    """ec/<index % EC_SHARDS>.json -> {index: {c: [commodity shares], p: [partner shares]}}."""
+    com = ranked(ec.groupby(["edge_id", "direction", "commodity"], as_index=False).tonnes.sum(),
+                 "commodity", 6) if not ec.empty else {}
+    par = ranked(ep, "partner", 6) if not ep.empty else {}
+    shards = [{} for _ in range(EC_SHARDS)]
+    for key, i in pos.items():
+        c, p = com.get(key), par.get(key)
+        if c or p:
+            shards[i % EC_SHARDS][str(i)] = {"c": c or [], "p": p or []}
+    root = os.path.join(OUT, "ec")
+    shutil.rmtree(root, ignore_errors=True)
+    os.makedirs(root)
+    for i, sh in enumerate(shards):
+        with open(os.path.join(root, f"{i}.json"), "w") as f:
+            json.dump(sh, f, separators=(",", ":"))
+    size = sum(os.path.getsize(os.path.join(root, f"{i}.json")) for i in range(EC_SHARDS))
+    print(f"wrote ec/ {EC_SHARDS} shards       {size/1048576:7.2f} MB total, "
+          f"{size/EC_SHARDS/1024:.0f} KB each")
+
+
+def write_partner_edges(ep, pos):
+    """pe/<direction>/<partner>.bin — every edge a partner's trade uses, heaviest first.
+    Layout: uint32[n] edge index into edges.bin, then float32[n] tonnes for that partner.
+    Fetched only when that country (or, for domestic, that province) is selected."""
+    root = os.path.join(OUT, "pe")
+    shutil.rmtree(root, ignore_errors=True)
+    if ep.empty:
+        print("pe/ skipped — per-edge parts carry no partner column (rerun extraction, tag allp)")
+        return {}
+    idx = np.fromiter((pos.get((e, d), -1) for e, d in zip(ep.edge_id, ep.direction)),
+                      dtype=np.int64, count=len(ep))
+    ep = ep.assign(idx=idx)
+    ep = ep[ep.idx >= 0]
+    index, size = {}, 0
+    for (d, partner), g in ep.groupby(["direction", "partner"]):
+        g = g.sort_values("tonnes", ascending=False)
+        os.makedirs(os.path.join(root, d), exist_ok=True)
+        path = os.path.join(root, d, f"{partner}.bin")
+        with open(path, "wb") as f:
+            f.write(g.idx.to_numpy(np.uint32).tobytes())
+            f.write(g.tonnes.to_numpy(np.float32).tobytes())
+        size += os.path.getsize(path)
+        index.setdefault(d, {})[str(partner)] = int(len(g))
+    n = sum(len(v) for v in index.values())
+    print(f"wrote pe/ {n} partner files    {size/1048576:7.2f} MB total")
+    return index
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="all")
+    ap.add_argument("--parts-tag", default=None,
+                    help="Read per-edge parts from _parts_<parts-tag> (default: --tag).")
+    ap.add_argument("--places-src", default=DEFAULT_PLACES,
+                    help="district_stats.json carrying country/province names and label points.")
     args = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
 
-    od, edges, geo, ec, _ = load_inputs(args.tag)
+    od, edges, geo, ec, ep = load_inputs(args.tag, args.parts_tag or args.tag)
     kcal_per_t = energy_per_tonne(od)
 
     partners = build_partners(od)
     commodities = build_commodities(partners)
-    foodgroups = build_foodgroups(od, partners, ec)
+    foodgroups = build_foodgroups(od, partners)
     provinces = build_provinces(od)
+    choropleth = build_choropleth(od)
+    partner_detail = build_partner_detail(od)
+    places = build_places(args.places_src, od)
 
     buf, edges_meta, kept = pack_edges(edges, geo, ec, kcal_per_t)
     with open(os.path.join(OUT, "edges.bin"), "wb") as f:
         f.write(buf)
+    n_conn = int((kept.scope == "connector").sum())
     print(f"packed {edges_meta['count']:,} edges "
           f"({edges_meta['byteLength']/1048576:.2f} MB, "
           f"{edges_meta['byteLength']/max(edges_meta['count'],1):.0f} bytes/edge); "
-          f"dropped {edges_meta['dropped_no_geometry']:,} without geometry")
+          f"{n_conn} connectors tagged; dropped {edges_meta['dropped_no_geometry']:,} without geometry")
 
-    # Edge index -> commodities carried. Whole-file this is ~14 MB, far bigger than the
-    # network itself, and the map never reads it -- only the detail panel, one edge at a
-    # time. So it ships as EC_SHARDS files keyed by `index % EC_SHARDS`; the app fetches
-    # the single ~55 KB shard for the edge that was clicked.
-    shards = [{} for _ in range(EC_SHARDS)]
-    if not ec.empty:
-        pos = {(r.edge_id, r.direction): i for i, r in enumerate(kept.itertuples(index=False))}
-        sel = ec[ec.edge_id.isin(set(kept.edge_id))]
-        for (eid, d), g in sel.groupby(["edge_id", "direction"]):
-            i = pos.get((eid, d))
-            if i is None:
-                continue
-            g = g.sort_values("tonnes", ascending=False).head(6)
-            tot = float(g.tonnes.sum()) or 1.0
-            shards[i % EC_SHARDS][str(i)] = [{"c": c, "s": round(float(t / tot), 3)}
-                                             for c, t in zip(g.commodity, g.tonnes)]
-    ec_dir = os.path.join(OUT, "ec")
-    os.makedirs(ec_dir, exist_ok=True)
-    for old in glob.glob(os.path.join(ec_dir, "*.json")):
-        os.remove(old)
-    for i, sh in enumerate(shards):
-        with open(os.path.join(ec_dir, f"{i}.json"), "w") as f:
-            json.dump(sh, f, separators=(",", ":"))
-    shard_bytes = sum(os.path.getsize(os.path.join(ec_dir, f"{i}.json")) for i in range(EC_SHARDS))
-    print(f"wrote ec/ {EC_SHARDS} shards       {shard_bytes/1048576:7.2f} MB total, "
-          f"{shard_bytes/EC_SHARDS/1024:.0f} KB each")
+    pos = {(r.edge_id, r.direction): i for i, r in enumerate(kept.itertuples(index=False))}
+    write_edge_detail(ec, ep, pos)
     edges_meta["ecShards"] = EC_SHARDS
+    edges_meta["partnerEdges"] = write_partner_edges(ep, pos)
 
     meta = {
         "country": "CAN",
         "tag": args.tag,
+        "partsTag": args.parts_tag or args.tag,
         "coverage": "full network — no calorie threshold applied",
         "units": {"tonnes": "metric tonnes", "kcal": "kilocalories"},
         "foodGroups": FOOD_GROUPS,
+        "routeTypes": ROUTE_TYPES,
         "provinces": [{"admin": k, "name": v[0], "code": v[1]} for k, v in PROVINCES.items()],
+        "hasPartnerEdges": bool(edges_meta["partnerEdges"]),
         "headline": {
             d: {"tonnes": round(float(od[od.direction == d].tonnes.sum()), 1),
                 "kcal": float(np.nansum(od[od.direction == d].kcal)),
                 "commodities": int(od[od.direction == d].commodity.nunique()),
                 "food_groups": int(od[od.direction == d].food_group.nunique()),
                 "partners": int(od[od.direction == d].partner.nunique()),
-                "provinces": int(od[od.direction == d].ca_admin.isin(PROVINCES).sum() > 0
-                                 and od[od.direction == d].ca_admin.nunique()),
+                "provinces": int(od[od.direction == d].ca_admin.isin(list(PROVINCES)).pipe(
+                    lambda m: od[od.direction == d].ca_admin[m].nunique())),
                 "hhi": (partners.get(d, {}).get("overall") or {}).get("hhi"),
-                "effective_partners": (partners.get(d, {}).get("overall") or {}).get("effective_partners")}
+                "effective_partners": (partners.get(d, {}).get("overall") or {}).get("effective_partners"),
+                "top_partner": ((partners.get(d, {}).get("overall") or {}).get("top1") or {}).get("iso3"),
+                "top_partner_share": ((partners.get(d, {}).get("overall") or {}).get("top1") or {}).get("share"),
+                "routes": route_mix(od[od.direction == d])}
             for d in DIRECTIONS if (od.direction == d).any()
         },
         "caveats": [
@@ -457,22 +643,32 @@ def main():
             "Edge scope is Canadian territory plus maritime and port legs. Inland delivery "
             "inside partner countries is deliberately excluded: we do not model foreign road "
             "criticality.",
+            "Connector edges -- straight links from a network node to a region's centroid -- "
+            "carry real tonnage but no real path, so the map does not draw them.",
+            "Long sea and port legs, and a handful of long rail links, are drawn as straight lines "
+            "between network nodes, so some -- notably the Great Lakes and St. Lawrence legs -- cross "
+            "land on the map. The geometry is schematic; the tonnage on each leg is not.",
             "Criticality here is throughput share, not a no-alternative-route counterfactual. "
             "A high-throughput edge is not automatically irreplaceable.",
             "Concentration (HHI, effective partners) is measured on tonnage by partner "
             "country, so it describes sourcing breadth, not substitutability: two suppliers "
             "in one climate zone count as two.",
+            "Land/sea and direct/re-export shares count each journey once, from the source's "
+            "route datasets. They describe how journeys are routed, not the mode of every "
+            "segment along the way.",
             "Within-Canada domestic distribution is sparse in the source "
             "(Data_WithinCountry covers surplus->deficit redistribution only).",
             "Route-level totals fall ~10% below O-D totals: some flows have no routable path.",
-            "Provinces are the Canadian end of each journey — destination for imports, origin "
-            "for exports — not the province of final consumption or of primary production.",
+            "Provinces are the Canadian end of each journey -- destination for imports, origin "
+            "for exports -- not the province of final consumption or of primary production.",
         ],
     }
 
     for name, obj in (("meta.json", meta), ("partners.json", partners),
                       ("commodities.json", commodities), ("foodgroups.json", foodgroups),
-                      ("provinces.json", provinces), ("edges_meta.json", edges_meta)):
+                      ("provinces.json", provinces), ("choropleth.json", choropleth),
+                      ("partner_detail.json", partner_detail), ("places.json", places),
+                      ("edges_meta.json", edges_meta)):
         p = os.path.join(OUT, name)
         with open(p, "w") as f:
             json.dump(obj, f, separators=(",", ":"))

@@ -28,7 +28,8 @@ export are real categories, not labels applied to an aggregate.
 | Geometry | `scripts/attach_geometry.py` → `data/canada_edge_geometry_all.csv` | 58,220 unique edges, 100% resolved |
 | Food groups | `data/food_groups.csv` (hand-built, 82/82 commodities covered) | 12 groups |
 | Build | `scripts/build_app_data_v2.py` | — |
-| Shipped | `public/data/` | **3.0 MB initial**, 55 KB per edge click |
+| Partner-keyed parts | `extract_canada_flows.py --tag allp` → `_parts_allp/` | 2.87 M edge × partner rows |
+| Shipped | `static/data/` | **~3.6 MB initial**; ~86 KB per segment click; ≤134 KB per country selected |
 
 Shipped payload: `edges.bin` 2.74 MB (70,198 edges at 41 bytes each), `partners.json` 180 KB,
 `foodgroups.json` 58 KB, `provinces.json` 58 KB, `commodities.json` 40 KB, `meta.json` 2.7 KB,
@@ -43,18 +44,26 @@ Two source problems are fixed in `build_app_data_v2.py`, not upstream:
    The full network now ships, because the binary encoding makes it cheaper than the old
    truncated JSON was.
 
-## Views
+## Layout and views
 
-| View | The one question it answers |
+Map-first, on globalfoodsupply's layout. The **direction toggle governs everything**: Import /
+Export / Domestic is the app's primary axis, not a filter inside one chart.
+
+| Element | The one question it answers |
 |---|---|
-| Network | Which infrastructure carries Canada's food, and where does it run? |
-| Concentration | How many countries does Canada actually depend on? |
-| Food groups | Does the answer change by what kind of food it is? |
-| Provinces | Which provinces carry the trade, and in what? |
+| Transport routes (layer) | Which infrastructure carries Canada's food, and where does it run? |
+| Partner countries (layer) | Where does it come from, or go to — and how much from each? |
+| Provinces (layer) | Where does it enter or leave Canada? |
+| Canada overview (right panel) | How many countries does Canada actually depend on, and does that change by food group? |
+| Country panel (click a country) | What does Canada trade with this country, and which routes does that trade use? |
+| Province panel (click a province) | What enters or leaves through here, and from whom? |
+| Segment popup (click a line) | What does this segment carry, for whom, and what share of the trade passes here? |
 | Exposure *(phase 2)* | Where does concentration meet climate and hazard risk? |
 
-The **direction toggle governs all of them**. Import / Export / Domestic is the app's primary
-axis, not a filter inside one chart.
+Why SvelteKit: the first scaffold was a React dashboard with tabs. Once the target became "like
+globalfoodsupply", both house rules — clone the reference's structure; map-centred apps use
+SvelteKit — pointed the same way, and only the shell existed, so it moved before any view was
+built.
 
 ## What the data actually says
 

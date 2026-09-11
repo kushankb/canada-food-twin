@@ -1,15 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
 
-// Deployed to https://canadafoodsupply.kushankbajaj.com via GitHub Pages with a CNAME,
-// so the site sits at the domain root and base stays '/'. If this ever moves to a project
-// path (kushankb.github.io/canada-food-twin/), change base here AND drop public/CNAME —
-// every data fetch already goes through import.meta.env.BASE_URL, so nothing else changes.
 export default defineConfig({
-  base: '/',
-  plugins: [react(), tailwindcss()],
-  build: { outDir: 'dist', assetsInlineLimit: 0 },
+  plugins: [tailwindcss(), sveltekit()],
+  // Expose PUBLIC_* to import.meta.env. A missing Mapbox token then shows as a message on the
+  // map instead of failing the build, which is what $env/static/public would do.
+  envPrefix: ['VITE_', 'PUBLIC_'],
   // Honour a PORT assigned by the harness; Vite does not read it on its own.
   server: { port: Number(process.env.PORT) || 5173 },
-})
+});

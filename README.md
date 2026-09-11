@@ -4,9 +4,11 @@
 
 → https://canadafoodsupply.kushankbajaj.com
 
-An interactive map and analysis of Canada's food trade at the level of individual transport
-segments: 70,198 road, rail, maritime and port edges carrying 82 commodities between Canada
-and 175 partner countries, cut by direction, food group and province.
+An interactive map of Canada's food trade at the level of individual transport segments:
+70,198 road, rail, maritime and port edges carrying 82 commodities between Canada and 175
+partner countries, cut by direction, food group and province. Built on the same layout as the
+global map — switch between imports and exports, click a country to see what Canada trades with
+it and trace the routes that trade uses, click a line to see what it carries and for whom.
 
 Companion to [globalfoodsupply.kushankbajaj.com](https://globalfoodsupply.kushankbajaj.com),
 which covers the whole world but cannot distinguish imports from exports. This one can — see
@@ -47,11 +49,17 @@ single-counted, and tied to origin→destination admin-1 pairs.
 |---|---|---|
 | Source | `Output/Version8/PostProcessed/…/Flows_*.csv.gz` | 413 files, 47.7 M rows |
 | Extract | `data/canada_od_all.csv`, `canada_edges_all.csv`, `_parts_all/` | 3.1 M per-commodity edge rows |
-| Build | `public/data/` | **3.0 MB initial load** |
+| Build | `static/data/` | **~3.6 MB initial load** |
 
 The network ships as a packed binary — `edges.bin`, 41 bytes per edge — rather than JSON,
 which is what makes the full 70,198-edge network affordable instead of a truncated subset.
-Per-edge commodity detail is sharded 256 ways and fetched only when an edge is clicked.
+Two things load only on demand: a clicked segment's commodity and partner mix (`ec/`, 256
+shards of ~86 KB) and a selected country's own segments (`pe/`, one file per partner, the
+largest ~134 KB).
+
+The extraction keys every segment by partner as well as commodity, so a segment can say whose
+trade it carries (the Windsor–Detroit rail crossing: 95% US, 5% Mexico) and a country can be
+traced across the network.
 
 Food groups come from `data/food_groups.csv`, a hand-built crosswalk covering all 82 FAO Food
 Balance Sheet commodities across 12 groups.
@@ -70,13 +78,16 @@ Balance Sheet commodities across 12 groups.
   redistribution only, so they are not comparable in magnitude to imports or exports.
 - **No balance or self-sufficiency figures**, deliberately: imports and exports are different
   commodity mixes and differencing them would invent a number the data cannot support.
+- **Long sea and port legs are schematic straight lines**, so some — notably the Great Lakes
+  and St. Lawrence legs — cross land on the map. The global map has the same geometry.
+- **For re-export flows the partner shown is the re-exporter**, not where the food was grown.
 - Route totals fall ~10% below origin–destination totals — some flows have no routable path.
 
 ## Development
 
 ```bash
 npm install
-cp .env.example .env        # add a Mapbox public token
+cp .env.example .env        # add a Mapbox public token as PUBLIC_MAPBOX_TOKEN
 npm run dev
 ```
 
@@ -84,8 +95,11 @@ Rebuilding the payload needs the analysis outputs under `Output/Version8/` and P
 pandas, numpy and pyarrow:
 
 ```bash
-python3 scripts/build_app_data_v2.py --tag all
+python3 scripts/build_app_data_v2.py --tag all --parts-tag allp
 ```
+
+The deployed site needs the repository secret `PUBLIC_MAPBOX_TOKEN` and a DNS `CNAME` record
+`canadafoodsupply` → `kushankb.github.io`.
 
 ```bash
 python3 scripts/check_palette.py
@@ -96,8 +110,9 @@ any colour change ships.
 
 ## Stack
 
-React 19 · TypeScript · Vite · Recharts · Mapbox GL + deck.gl · Tailwind 4. Static site, no
-backend; every aggregate is precomputed in Python at build time.
+SvelteKit 2 · Svelte 5 · TypeScript · Mapbox GL + deck.gl · Tailwind 4 + daisyUI. Static site,
+no backend; every aggregate is precomputed in Python at build time. Layout, map chrome and
+boundary tilesets are shared with the global map.
 
 ## Documentation
 
